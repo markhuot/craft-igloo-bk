@@ -1,0 +1,11 @@
+{
+    "name": "markhuot/craft-igloo",
+    "type": "craft-plugin",
+    "authors": [
+        {
+            "name": "Mark Huot",
+            "email": "mark@markhuot.com"
+        }
+    ],
+    "require": {}
+}
