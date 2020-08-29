@@ -25,5 +25,8 @@
         "class": "markhuot\\igloo\\Igloo",
         "components": {
         }
+    },
+    "require-dev": {
+        "pestphp/pest": "^0.3.0"
     }
 }
