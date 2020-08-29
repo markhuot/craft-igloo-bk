@@ -19,8 +19,8 @@
     "extra": {
         "name": "Igloo",
         "handle": "igloo",
-        "hasCpSettings": true,
-        "hasCpSection": true,
+        "hasCpSettings": false,
+        "hasCpSection": false,
         "changelogUrl": "",
         "class": "markhuot\\igloo\\Igloo",
         "components": {
