@@ -9,7 +9,8 @@
         }
     ],
     "require": {
-        "craftcms/cms": "^3.0.0"
+        "craftcms/cms": "^3.0.0",
+        "tightenco/collect": "^7.25"
     },
     "autoload": {
         "psr-4": {
@@ -27,6 +28,7 @@
         }
     },
     "require-dev": {
-        "pestphp/pest": "^0.3.0"
+        "pestphp/pest": "^0.3.0",
+        "spatie/pest-plugin-snapshots": "^0.3.0"
     }
 }

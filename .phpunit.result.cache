@@ -1,1 +1,1 @@
-C:37:"PHPUnit\Runner\DefaultTestResultCache":90:{a:2:{s:7:"defects";a:0:{}s:5:"times";a:1:{s:30:"/app/tests/ExampleTest.php::it";d:0.003;}}}
+C:37:"PHPUnit\Runner\DefaultTestResultCache":236:{a:2:{s:7:"defects";a:1:{s:59:"/Users/markhuot/Sites/craft-igloo/tests/ExampleTest.php::it";i:2;}s:5:"times";a:2:{s:30:"/app/tests/ExampleTest.php::it";d:0.003;s:59:"/Users/markhuot/Sites/craft-igloo/tests/ExampleTest.php::it";d:0.007;}}}

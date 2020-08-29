@@ -1,0 +1,40 @@
+-
+    id: 1
+    type: markhuot\igloo\models\Box
+    lft: 0
+    rgt: 13
+-
+    id: 2
+    type: markhuot\igloo\models\Text
+    lft: 1
+    rgt: 2
+    data: { content: foo }
+-
+    id: 4
+    type: markhuot\igloo\models\Box
+    lft: 3
+    rgt: 10
+-
+    id: 5
+    type: markhuot\igloo\models\Text
+    lft: 4
+    rgt: 5
+    data: { content: baz }
+-
+    id: 6
+    type: markhuot\igloo\models\Text
+    lft: 6
+    rgt: 7
+    data: { content: qux }
+-
+    id: 7
+    type: markhuot\igloo\models\Text
+    lft: 8
+    rgt: 9
+    data: { content: qid }
+-
+    id: 3
+    type: markhuot\igloo\models\Text
+    lft: 11
+    rgt: 12
+    data: { content: bar }

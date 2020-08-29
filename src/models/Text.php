@@ -19,14 +19,32 @@ class Text extends Block {
      *
      * @param $content
      */
-    public function __construct($content)
+    function __construct($content=null, $config=[])
     {
-        parent::__construct(['content' => $content]);
+        parent::__construct(array_merge(['content' => $content], $config));
     }
 
-    public function serialize()
+    /**
+     * Serialize the data for the persistent storage
+     *
+     * @return string[]|null
+     */
+    function serialize()
     {
         return ['content' => $this->content];
     }
+
+    /**
+     * Unserialize the data coming out of the persistent storage
+     *
+     * @param string[] $config
+     * @return static
+     */
+    static function unserialize($config=[])
+    {
+        return new static($config);
+    }
+
+
 
 }

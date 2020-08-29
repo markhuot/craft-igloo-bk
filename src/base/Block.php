@@ -4,13 +4,17 @@ namespace markhuot\igloo\base;
 
 use Craft;
 use craft\base\Model;
+use craft\helpers\StringHelper;
 
 class Block extends Model {
+
+    /** @var string */
+    public $id;
 
     /**
      * Init the block and any traits attached to the block
      */
-    public function init()
+    function init()
     {
         parent::init();
 
@@ -32,10 +36,13 @@ class Block extends Model {
      */
     function prepareSave()
     {
-        $data = [
-            'id' => uniqid(),
+        $data = array_filter([
+            'id' => $this->id,
+            'uid' => $this->uid ?? StringHelper::UUID(),
             'type' => get_class($this),
-        ];
+        ], function ($value) {
+            return $value !== null;
+        });
 
         if ($this->hasChildren()) {
             $data['children'] = $this->prepareSaveChildren();
