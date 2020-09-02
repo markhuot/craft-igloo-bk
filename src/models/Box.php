@@ -8,11 +8,11 @@ use markhuot\igloo\valueobjects\Styles;
 class Box extends Block {
 
     /**
-     * Whether the box should allow children
-     *
-     * @var bool
+     * @inheritdoc
      */
-    public $allowChildren = true;
+    public $slots = [
+        'children',
+    ];
 
     /**
      * Any blocks that are nested inside this box
@@ -31,11 +31,6 @@ class Box extends Block {
     {
         $this->children[] = $block;
         return $this;
-    }
-
-    public function getChildren()
-    {
-        return $this->children;
     }
 
 }

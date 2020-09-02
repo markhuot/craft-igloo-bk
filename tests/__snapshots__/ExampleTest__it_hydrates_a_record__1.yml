@@ -1,0 +1,9 @@
+content: 'foo bar baz'
+id: null
+uid: null
+slots: {  }
+slot: null
+styles:
+    borderLeft: null
+    paddingLeft: null
+    color: null

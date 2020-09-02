@@ -15,9 +15,20 @@ class Install extends Migration
                 'dateCreated' => $this->dateTime()->notNull(),
                 'dateUpdated' => $this->dateTime()->notNull(),
                 'uid'         => $this->uid(),
-                'tree'        => $this->string(),
                 'type'        => $this->string(),
-                'contentId'   => $this->integer()->unsigned(),
+            ]
+        );
+
+        $this->createTable(
+            '{{%igloo_block_structure}}',
+            [
+                'id'          => $this->primaryKey(),
+                'dateCreated' => $this->dateTime()->notNull(),
+                'dateUpdated' => $this->dateTime()->notNull(),
+                'uid'         => $this->uid(),
+                'blockId'     => $this->integer()->unsigned(),
+                'tree'        => $this->string(),
+                'slot'        => $this->string(),
                 'lft'         => $this->integer()->unsigned(),
                 'rgt'         => $this->integer()->unsigned(),
             ]

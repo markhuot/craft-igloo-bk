@@ -1,16 +1,16 @@
 -
-    type: markhuot\igloo\models\Box
+    type: markhuot\igloo\models\Blockquote
     lft: 0
     rgt: 5
 -
     type: markhuot\igloo\models\Text
-    slot: children
+    slot: content
     lft: 1
     data: { content: foo }
     rgt: 2
 -
     type: markhuot\igloo\models\Text
-    slot: children
+    slot: author
     lft: 3
     data: { content: bar }
     rgt: 4

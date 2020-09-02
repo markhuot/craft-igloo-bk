@@ -19,7 +19,7 @@ trait Styleable {
      *
      * @return array
      */
-    function styleableFields()
+    function serializeStyleable()
     {
         return [
             'styles' => function () {

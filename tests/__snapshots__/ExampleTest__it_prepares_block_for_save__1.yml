@@ -1,4 +1,3 @@
-id: 1
 type: markhuot\igloo\models\Text
 data:
     content: 'foo bar baz'

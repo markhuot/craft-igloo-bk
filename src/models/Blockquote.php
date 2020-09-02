@@ -6,9 +6,17 @@ use Craft;
 
 class Blockquote extends Box {
 
+    /**
+     * Allow the quote to be styleable
+     */
     use Styleable;
 
-    /** @var Text */
+    /** 
+     * The quote content
+     * 
+     * @child
+     * @var Text
+     */
     public $content;
 
     /** @var Text */
@@ -17,12 +25,9 @@ class Blockquote extends Box {
     /**
      * @inheritdoc
      */
-    function getChildren()
-    {
-        return array_filter([
-            'content' => $this->content,
-            'author' => $this->author,
-        ]);
-    }
+    public $slots = [
+        'content',
+        'author',
+    ];
 
 }

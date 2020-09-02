@@ -19,7 +19,7 @@ class Blocks {
 
     function getRecordsFromBlock(Block $block)
     {
-        $map = $block->prepareSave();
+        $map = $block->serialize();
         return $this->getRecordsFromTree([$map]);
     }
 
@@ -33,6 +33,7 @@ class Blocks {
                 'id' => $node['id'] ?? null,
                 'uid' => $node['uid'] ?? null,
                 'type' => $node['type'],
+                'slot' => $node['slot'] ?? null,
                 'lft' => $left,
                 'rgt' => null,
             ], function ($value) {
@@ -96,18 +97,47 @@ class Blocks {
             ->orderBy(['lft' => SORT_ASC])
             ->all();
 
-        // foreach ($records as $record) {
-        //     $class = $record['type'];
-        //     $record = $class::unserialize($record);
-        // }
+        $tree = $this->makeTree($records);
+        $this->hydrate($tree);
     }
 
-    function nestRecordsInTree(array $records, $lft=null, $rgt=null) {
-        foreach ($records as $record) {
-            if ($record['lft'] > $lft && $record['lft'] < $rgt) {
+    function makeTree($records)
+    {
+        $tree = [];
+        $record = array_shift($records);
+        $recordIndex = count($tree);
+        $tree[] = $record;
 
+        foreach ($records as $nextIndex => $next) {
+            if ($next['lft'] === $record['lft'] + 1) {
+                // is child
+                $tree[$recordIndex]['children'] = $this->makeTree(array_slice($records, $nextIndex));
+            }
+            if ($next['lft'] === $record['rgt'] + 1) {
+                // is sibling
+                $tree[] = $next;
+                $record = $next;
             }
         }
+
+        return $tree;
+    }
+
+    function hydrate($record)
+    {
+        $recordType = $record['type'];
+        // if (!empty($record['children'])) {
+        //     $record['children'] = array_map(function ($child) {
+        //         return $this->hydrate($child);
+        //     }, $record['children']);
+        //     $record['data']['children'] = $record['children'];
+        // }
+        // $record['data'] = $record['data'] ?? [];
+        $model = new $recordType;
+        $model->unserialize($record);
+        //$model = $recordType::unserialize($record['data'] ?? []);
+        // @TODO add ->parent in to each child so you can look back up the tree
+        return $model;
     }
 
 }

@@ -1,5 +1,4 @@
-id: 1
 type: markhuot\igloo\models\Box
 children:
-    - { id: 2, type: markhuot\igloo\models\Text, data: { content: foo } }
-    - { id: 3, type: markhuot\igloo\models\Text, data: { content: bar } }
+    - { type: markhuot\igloo\models\Text, slot: children, data: { content: foo } }
+    - { type: markhuot\igloo\models\Text, slot: children, data: { content: bar } }

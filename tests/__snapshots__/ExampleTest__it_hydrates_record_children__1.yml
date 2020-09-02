@@ -1,0 +1,9 @@
+slots:
+    - children
+children:
+    - { content: null, id: null, uid: null, slots: {  }, slot: null, styles: { borderLeft: null, paddingLeft: null, color: null } }
+    - { content: [{ content: 'To be or not to be...', id: null, uid: null, slots: {  }, slot: null, styles: { borderLeft: null, paddingLeft: null, color: null } }], author: [{ content: 'Some Guy', id: null, uid: null, slots: {  }, slot: null, styles: { borderLeft: null, paddingLeft: null, color: null } }], slots: [content, author], children: {  }, id: null, uid: null, slot: null, styles: { borderLeft: null, paddingLeft: null, color: null } }
+    - { content: null, id: null, uid: null, slots: {  }, slot: null, styles: { borderLeft: null, paddingLeft: null, color: null } }
+id: null
+uid: null
+slot: null

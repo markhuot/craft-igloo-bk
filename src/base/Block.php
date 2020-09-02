@@ -11,6 +11,26 @@ class Block extends Model {
     /** @var string */
     public $id;
 
+    /** @var string */
+    public $uid;
+
+    /**
+     * The slots this block exposes to fill with other blocks
+     * 
+     * @var string[]
+     */
+    public $slots = [];
+
+    /**
+     * When rendered as a child of another block this will
+     * contain the attribute of the parent that is holding
+     * the child. E.g., when a text block is nested inside
+     * a split "column" the slot would be "column."
+     * 
+     * @var string
+     */
+    public $slot;
+
     /**
      * Init the block and any traits attached to the block
      */
@@ -26,33 +46,6 @@ class Block extends Model {
                 $this->{$method}();
             }
         }
-    }
-
-    /**
-     * Prepare the block for saving finding it's children and normalizing
-     * its data model
-     *
-     * @return array
-     */
-    function prepareSave()
-    {
-        $data = array_filter([
-            'id' => $this->id,
-            'uid' => $this->uid ?? StringHelper::UUID(),
-            'type' => get_class($this),
-        ], function ($value) {
-            return $value !== null;
-        });
-
-        if ($this->hasChildren()) {
-            $data['children'] = $this->prepareSaveChildren();
-        }
-
-        if ($serializedData = $this->serialize()) {
-            $data['data'] = $serializedData;
-        }
-
-        return $data;
     }
 
     /**
@@ -75,7 +68,25 @@ class Block extends Model {
      */
     function getChildren()
     {
-        return [];
+        $children = [];
+
+        foreach ($this->getSlotNames() as $slotName) {
+            if (!empty($this->{$slotName})) {
+                $child = $this->{$slotName};
+                if (is_array($child)) {
+                    foreach ($child as $c) {
+                        $c->slot = $slotName;
+                    }
+                    $children = array_merge($children, $child);
+                }
+                else {
+                    $child->slot = $slotName;
+                    $children[] = $child;
+                }
+            }
+        }
+
+        return $children;
     }
 
     /**
@@ -90,15 +101,44 @@ class Block extends Model {
     }
 
     /**
-     * Run prepareSave over all of the children of this block
-     *
-     * @return array[]
+     * Get the plain string names of each slot this block exposes
      */
-    function prepareSaveChildren()
+    function getSlotNames()
     {
-        return array_map(function (Block $block) {
-            return $block->prepareSave();
-        }, $this->getChildren());
+        $slots = [];
+
+        foreach ($this->slots as $k => $v) {
+            if (is_numeric($k)) {
+                $slots[] = $v;
+            }
+            else {
+                $slots[] = $k;
+            }
+        }
+
+        return $slots;
+    }
+
+    /**
+     * Get the slot configuration
+     * 
+     * @var string $name
+     */
+    function getSlotInfo($name)
+    {
+        $defaultInfo = [
+            'limit' => null,
+        ];
+
+        if (isset($this->slots[$name])) {
+            return array_merge($defaultInfo, $this->slots[$name]);
+        }
+
+        if (array_search($name, $this->slots) !== false) {
+            return $defaultInfo;
+        }
+
+        return false;
     }
 
     /**
@@ -108,7 +148,49 @@ class Block extends Model {
      */
     public function serialize()
     {
-        return null;
+        $data = array_filter([
+            'id' => $this->id,
+            'uid' => $this->uid,
+            'type' => get_class($this),
+            'slot' => $this->slot,
+        ]);
+
+        if ($this->hasChildren()) {
+            $data['children'] = array_map(function (Block $block) {
+                return $block->serialize();
+            }, $this->getChildren());;
+        }
+
+        // @todo serialize traits, like "Styleable" so that we
+        // get a new top-level key called styleable with the styles
+        // stored inside
+
+        $content = $this->toArray();
+        if (!empty($content)) {
+            $data['data'] = $content;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Unserialize the data coming out of the persistent storage
+     *
+     * @param string[] $config
+     * @return static
+     */
+    function unserialize($config=[])
+    {
+        foreach (($config['children'] ?? []) as $child) {
+            $slot = $child['slot'];
+            $this->{$slot}[] = (new \markhuot\igloo\services\Blocks())->hydrate($child);
+        }
+
+        foreach (($config['data'] ?? []) as $k => $v) {
+            $this->{$k} = $v;
+        }
+
+        return $this;
     }
 
     /**
@@ -118,21 +200,23 @@ class Block extends Model {
      */
     function fields()
     {
-        $traitFields = [];
-        $reflect = new \ReflectionClass($this);
-        $traits = $reflect->getTraits();
-        foreach ($traits as $trait) {
-            $method = lcfirst($trait->getShortName()).'Fields';
-            if ($reflect->hasMethod($method)) {
-                $traitFields = array_merge($traitFields, $this->{$method}());
-            }
-        }
+        return [];
 
-        return array_merge(parent::fields(), [
-            '__type' => function  () {
-                return get_class($this);
-            },
-        ], $traitFields);
+        // $traitFields = [];
+        // $reflect = new \ReflectionClass($this);
+        // $traits = $reflect->getTraits();
+        // foreach ($traits as $trait) {
+        //     $method = lcfirst($trait->getShortName()).'Fields';
+        //     if ($reflect->hasMethod($method)) {
+        //         $traitFields = array_merge($traitFields, $this->{$method}());
+        //     }
+        // }
+
+        // return array_merge(parent::fields(), [
+        //     '__type' => function  () {
+        //         return get_class($this);
+        //     },
+        // ], $traitFields);
     }
 
     /**
