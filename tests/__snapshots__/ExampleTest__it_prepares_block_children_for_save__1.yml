@@ -1,4 +1,0 @@
-type: markhuot\igloo\models\Box
-children:
-    - { type: markhuot\igloo\models\Text, slot: children, data: { content: foo } }
-    - { type: markhuot\igloo\models\Text, slot: children, data: { content: bar } }

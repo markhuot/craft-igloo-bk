@@ -29,8 +29,14 @@ class Text extends Block {
         parent::__construct(array_merge(['content' => $content], $config));
     }
 
-    function fields() {
+    function fields()
+    {
         return ['content'];
+    }
+
+    public static function tableName()
+    {
+        return '{{%igloo_content_text}}';
     }
 
 

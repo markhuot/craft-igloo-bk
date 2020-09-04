@@ -1,4 +1,4 @@
 <blockquote style="{{ block.styleAttribute }}">
-    <div>{{ block.content.getInputHtml()|raw }}</div>
-    <div>- {{ block.author.getInputHtml()|raw }}</div>
+    <div>{{ block.content|map(c => c.getInputHtml())|join('')|raw }}</div>
+    <div>- {{ block.author|map(a => a.getInputHtml())|join('')|raw }}</div>
 </blockquote>

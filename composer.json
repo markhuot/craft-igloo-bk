@@ -29,6 +29,7 @@
     },
     "require-dev": {
         "pestphp/pest": "^0.3.0",
-        "spatie/pest-plugin-snapshots": "^0.3.0"
+        "spatie/pest-plugin-snapshots": "^0.3.0",
+        "vlucas/phpdotenv": "^3.0"
     }
 }

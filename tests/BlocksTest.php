@@ -46,10 +46,11 @@ it('flattens deep tree', function () {
 
 it('creates a tree', function () {
     $records = [
-        ['lft' => 0, 'rgt' => 7],
-        ['lft' => 1, 'rgt' => 4],
-        ['lft' => 2, 'rgt' => 3],
-        ['lft' => 5, 'rgt' => 6],
+        ['lft' => 0, 'rgt' => 9],
+        ['lft' => 1, 'rgt' => 2],
+        ['lft' => 3, 'rgt' => 6],
+        ['lft' => 4, 'rgt' => 5],
+        ['lft' => 7, 'rgt' => 8],
     ];
     $tree = (new \markhuot\igloo\services\Blocks())->makeTree($records);
     assertMatchesSnapshot($records);
@@ -83,3 +84,28 @@ it('hydrates record children', function () {
     $block = (new \markhuot\igloo\services\Blocks())->hydrate($box);
     assertMatchesSnapshot($block);
 });
+
+it('saves a simple tree', function () {
+    $box = new \markhuot\igloo\models\Box();
+    $box->append(new \markhuot\igloo\models\Text('foo'));
+    $box->append(new \markhuot\igloo\models\Text('bar'));
+    $records = (new \markhuot\igloo\services\Blocks())->getRecordsFromBlock($box);
+    $tree = uniqid();
+    (new \markhuot\igloo\services\Blocks())->saveRecords($records, $tree);
+    $result = (new \craft\db\Query)
+        ->from(['b' => '{{%igloo_blocks}}'])
+        ->innerJoin('{{%igloo_block_structure}} s', 's.id=b.id')
+        ->where(['s.tree' => $tree])
+        ->all();
+    $result = collect($result)
+        ->map(function ($row) {
+            unset($row['id']);
+            unset($row['uid']);
+            unset($row['dateCreated']);
+            unset($row['dateUpdated']);
+            unset($row['tree']);
+            return $row;
+        })
+        ->toArray();
+    assertMatchesSnapshot($result);
+})->skip();

@@ -49,6 +49,14 @@ class Block extends Model {
     }
 
     /**
+     * @return string the name of the table associated with this model
+     */
+    public static function tableName()
+    {
+        return null;
+    }
+
+    /**
      * Whether the block has child blocks
      *
      * @return bool
@@ -75,11 +83,17 @@ class Block extends Model {
                 $child = $this->{$slotName};
                 if (is_array($child)) {
                     foreach ($child as $c) {
+                        // @TODO shouldn't have to set this when pulling data out
+                        // it should already be set when the slots are hydrated from
+                        // the database
                         $c->slot = $slotName;
                     }
                     $children = array_merge($children, $child);
                 }
                 else {
+                    // @TODO shouldn't have to set this when pulling data out
+                    // it should already be set when the slots are hydrated from
+                    // the database
                     $child->slot = $slotName;
                     $children[] = $child;
                 }
@@ -152,6 +166,7 @@ class Block extends Model {
             'id' => $this->id,
             'uid' => $this->uid,
             'type' => get_class($this),
+            'tableName' => $this->tableName(),
             'slot' => $this->slot,
         ]);
 

@@ -22,11 +22,10 @@ class Install extends Migration
         $this->createTable(
             '{{%igloo_block_structure}}',
             [
-                'id'          => $this->primaryKey(),
+                'id'          => $this->integer()->unsigned(),
                 'dateCreated' => $this->dateTime()->notNull(),
                 'dateUpdated' => $this->dateTime()->notNull(),
                 'uid'         => $this->uid(),
-                'blockId'     => $this->integer()->unsigned(),
                 'tree'        => $this->string(),
                 'slot'        => $this->string(),
                 'lft'         => $this->integer()->unsigned(),
@@ -37,7 +36,7 @@ class Install extends Migration
         $this->createTable(
             '{{%igloo_content_text}}',
             [
-                'id'          => $this->primaryKey(),
+                'id'          => $this->integer()->unsigned(),
                 'dateCreated' => $this->dateTime()->notNull(),
                 'dateUpdated' => $this->dateTime()->notNull(),
                 'uid'         => $this->uid(),
@@ -49,6 +48,7 @@ class Install extends Migration
     public function safeDown()
     {
         $this->dropTableIfExists('{{%igloo_blocks}}');
-        $this->dropTableIfExists('{{%igloo_text}}');
+        $this->dropTableIfExists('{{%igloo_block_structure}}');
+        $this->dropTableIfExists('{{%igloo_content_text}}');
     }
 }

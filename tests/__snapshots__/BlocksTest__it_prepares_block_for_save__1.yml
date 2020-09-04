@@ -1,3 +1,4 @@
 type: markhuot\igloo\models\Text
+tableName: '{{%igloo_content_text}}'
 data:
     content: 'foo bar baz'

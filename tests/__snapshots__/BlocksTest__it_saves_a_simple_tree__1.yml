@@ -1,16 +1,15 @@
 -
     type: markhuot\igloo\models\Box
-    lft: 0
-    rgt: 5
+    slot: null
+    lft: '0'
+    rgt: '5'
 -
     type: markhuot\igloo\models\Text
     slot: children
-    lft: 1
-    data: { content: foo }
-    rgt: 2
+    lft: '1'
+    rgt: '2'
 -
     type: markhuot\igloo\models\Text
     slot: children
-    lft: 3
-    data: { content: bar }
-    rgt: 4
+    lft: '3'
+    rgt: '4'

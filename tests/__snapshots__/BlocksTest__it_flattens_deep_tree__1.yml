@@ -4,6 +4,7 @@
     rgt: 13
 -
     type: markhuot\igloo\models\Text
+    tableName: '{{%igloo_content_text}}'
     slot: children
     lft: 1
     data: { content: foo }
@@ -15,24 +16,28 @@
     rgt: 10
 -
     type: markhuot\igloo\models\Text
+    tableName: '{{%igloo_content_text}}'
     slot: children
     lft: 4
     data: { content: baz }
     rgt: 5
 -
     type: markhuot\igloo\models\Text
+    tableName: '{{%igloo_content_text}}'
     slot: children
     lft: 6
     data: { content: qux }
     rgt: 7
 -
     type: markhuot\igloo\models\Text
+    tableName: '{{%igloo_content_text}}'
     slot: children
     lft: 8
     data: { content: qid }
     rgt: 9
 -
     type: markhuot\igloo\models\Text
+    tableName: '{{%igloo_content_text}}'
     slot: children
     lft: 11
     data: { content: bar }

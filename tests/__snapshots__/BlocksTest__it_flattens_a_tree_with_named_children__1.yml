@@ -4,12 +4,14 @@
     rgt: 5
 -
     type: markhuot\igloo\models\Text
+    tableName: '{{%igloo_content_text}}'
     slot: content
     lft: 1
     data: { content: foo }
     rgt: 2
 -
     type: markhuot\igloo\models\Text
+    tableName: '{{%igloo_content_text}}'
     slot: author
     lft: 3
     data: { content: bar }

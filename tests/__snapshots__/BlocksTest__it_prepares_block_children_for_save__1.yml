@@ -1,0 +1,4 @@
+type: markhuot\igloo\models\Box
+children:
+    - { type: markhuot\igloo\models\Text, tableName: '{{%igloo_content_text}}', slot: children, data: { content: foo } }
+    - { type: markhuot\igloo\models\Text, tableName: '{{%igloo_content_text}}', slot: children, data: { content: bar } }
