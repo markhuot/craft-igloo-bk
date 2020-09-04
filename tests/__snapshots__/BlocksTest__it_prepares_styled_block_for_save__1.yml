@@ -1,0 +1,6 @@
+type: markhuot\igloo\models\Text
+tableName: '{{%igloo_content_text}}'
+styles:
+    color: red
+data:
+    content: 'foo bar'

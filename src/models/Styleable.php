@@ -9,9 +9,20 @@ trait Styleable {
     /** @var Styles */
     public $styles;
 
+    /**
+     * Init the styles. If they're already set to an array, then they must
+     * have come through the __constructor so convert them over to a true
+     * Styles object
+     */
     function initStyleable()
     {
-        $this->styles = new Styles();
+        if ($this->styles === null) {
+            $this->styles = new Styles();
+        }
+
+        if (is_array($this->styles) && !empty($this->styles)) {
+            $this->styles = new Styles($this->styles);
+        }
     }
 
     /**
@@ -22,9 +33,9 @@ trait Styleable {
     function serializeStyleable()
     {
         return [
-            'styles' => function () {
-                return $this->styles->toArray();
-            }
+            //'igloo_block_styles' => [
+                'styles' => $this->styles->toArray(),
+            //],
         ];
     }
 

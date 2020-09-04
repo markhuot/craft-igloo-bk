@@ -8,6 +8,11 @@ it('prepares block for save', function () {
     assertMatchesSnapshot($block->serialize());
 });
 
+it('prepares styled block for save', function () {
+    $block = new \markhuot\igloo\models\Text('foo bar', ['styles' => ['color' => 'red']]);
+    assertMatchesSnapshot($block->serialize());
+});
+
 it('prepares block children for save', function () {
     $box = new \markhuot\igloo\models\Box();
     $box->append(new \markhuot\igloo\models\Text('foo'));

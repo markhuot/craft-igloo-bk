@@ -160,11 +160,30 @@ class Blocks {
                     ->all();
             })
             ->flatten(1)
+            ->sortBy('lft')
+            ->map(function ($record) {
+                $meta = [
+                    'id' => $record['id'],
+                    'dateCreated' => $record['dateCreated'],
+                    'dateUpdated' => $record['dateUpdated'],
+                    'uid' => $record['uid'],
+                    'tree' => $record['tree'],
+                    'slot' => $record['slot'],
+                    'lft' => $record['lft'],
+                    'rgt' => $record['rgt'],
+                    'type' => $record['type'],
+                ];
+                $data = array_diff_key($record, $meta);
+                if (!empty($data)) {
+                    $meta['data'] = $data;
+                }
+                return $meta;
+            })
             ->toArray();
         //dd($records);
 
         $tree = $this->makeTree($records);
-        dd($tree);
+        //dd($tree);
         
         return array_map(function ($node) {
             return $this->hydrate($node);

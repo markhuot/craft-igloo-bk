@@ -37,7 +37,7 @@ class IglooField extends Field {
         $tree = '6tfhju65ff';
         // (new Blocks())->saveBlock($box, $tree);
         $blocks = (new Blocks())->getTree($tree);
-        dd($blocks);
+        //dd($blocks);
 
         return Craft::$app->view->renderTemplate('igloo/igloo', [
             'blocks' => $blocks,

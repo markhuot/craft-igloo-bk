@@ -15,7 +15,7 @@ class Block extends Model {
     public $uid;
 
     /**
-     * The slots this block exposes to fill with other blocks
+     * The slots this block exposes to be filled with other blocks
      * 
      * @var string[]
      */
@@ -37,15 +37,7 @@ class Block extends Model {
     function init()
     {
         parent::init();
-
-        $reflect = new \ReflectionClass($this);
-        $traits = $reflect->getTraits();
-        foreach ($traits as $trait) {
-            $method = 'init'.$trait->getShortName();
-            if ($reflect->hasMethod($method)) {
-                $this->{$method}();
-            }
-        }
+        $this->callTraits('init');
     }
 
     /**
@@ -160,7 +152,7 @@ class Block extends Model {
      *
      * @return array
      */
-    public function serialize()
+    function serialize()
     {
         $data = array_filter([
             'id' => $this->id,
@@ -179,6 +171,10 @@ class Block extends Model {
         // @todo serialize traits, like "Styleable" so that we
         // get a new top-level key called styleable with the styles
         // stored inside
+        $traitData = $this->serializeTraits();
+        if (!empty($traitData)) {
+            $data = array_merge($data, $traitData);
+        }
 
         $content = $this->toArray();
         if (!empty($content)) {
@@ -186,6 +182,59 @@ class Block extends Model {
         }
 
         return $data;
+    }
+
+    /**
+     * Serialize the trait data. Since there could be many traits the `callTraits`
+     * method, here, actually returns an array of each traits response.
+     * 
+     * E.g., give two traits, "use Styleable" and "use Accessible" it would return
+     * an array of,
+     * 
+     * [
+     *     "Styleable" => ["styles" => [...]] // This is the response from the Styleable trait
+     *     "Accessible" => ["aria-attr" => [...]] // This is the response from the Accessible trait
+     * ]
+     * 
+     * We don't _really_ care about the per-trait groupings, though so we flatten it
+     * by one level and then merge them all together.
+     * 
+     * @return array
+     */
+    function serializeTraits()
+    {
+        $traitData = $this->callTraits('serialize');
+
+        $data = collect($traitData)
+            ->reduce(function ($carry, $item) {
+                return $carry->merge($item);
+            }, collect([]))
+            ->filter()
+            ->toArray();
+
+        return $data;
+    }
+
+    /**
+     * Call a magic method on each trait, like initTrait or serializeTrait
+     * 
+     * @var string $prefix
+     * @return array
+     */
+    function callTraits($prefix)
+    {
+        $result = [];
+
+        $reflect = new \ReflectionClass($this);
+        $traits = $reflect->getTraits();
+        foreach ($traits as $trait) {
+            $method = $prefix . $trait->getShortName();
+            if ($reflect->hasMethod($method)) {
+                $result[$trait->getShortName()] = $this->{$method}();
+            }
+        }
+
+        return $result;
     }
 
     /**
