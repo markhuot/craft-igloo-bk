@@ -10,6 +10,7 @@ class Styles extends BaseObject {
     public $borderLeft = null;
     public $paddingLeft = null;
     public $color = null;
+    public $fontSize = null;
 
     function __construct($config = [])
     {
@@ -30,7 +31,7 @@ class Styles extends BaseObject {
         $styles = [];
         foreach ($properties as $prop) {
             $value = $this->{$prop->getName()};
-            if ($value !== null) {
+            if (!empty($value)) {
                 $styles[$prop->getName()] = $value;
             }
         }

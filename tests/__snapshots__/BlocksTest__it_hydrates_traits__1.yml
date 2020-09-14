@@ -11,5 +11,5 @@ slot: null
 styles:
     borderLeft: null
     paddingLeft: null
-    color: null
+    color: red
     fontSize: null

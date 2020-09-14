@@ -1,0 +1,10 @@
+<div x-data="{...StylePanel(), blockId: {{ block.id }}}">
+    <div>
+        <label>Color</label>
+        <input type="text" name="color" x-on:change="handleChange" value={{ block.styles.color }}>
+    </div>
+    <div>
+        <label>Font Size</label>
+        <input type="text" name="fontSize" x-on:change="handleChange" value={{ block.styles.fontSize }}>
+    </div>
+</div>

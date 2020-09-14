@@ -1,4 +1,5 @@
-type: markhuot\igloo\models\Text
-tableName: '{{%igloo_content_text}}'
-data:
+'{{%igloo_blocks}}':
+    type: markhuot\igloo\models\Text
+'{{%igloo_block_styles}}': {  }
+'{{%igloo_content_text}}':
     content: 'foo bar baz'

@@ -14,33 +14,44 @@ class Install extends Migration
                 'id'          => $this->primaryKey(),
                 'dateCreated' => $this->dateTime()->notNull(),
                 'dateUpdated' => $this->dateTime()->notNull(),
-                'uid'         => $this->uid(),
-                'type'        => $this->string(),
+                'uid'         => $this->uid()->notNull(),
+                'type'        => $this->string()->notNull(),
             ]
         );
 
         $this->createTable(
             '{{%igloo_block_structure}}',
             [
-                'id'          => $this->integer()->unsigned(),
+                'id'          => $this->primaryKey(),
                 'dateCreated' => $this->dateTime()->notNull(),
                 'dateUpdated' => $this->dateTime()->notNull(),
-                'uid'         => $this->uid(),
-                'tree'        => $this->string(),
+                'uid'         => $this->uid()->notNull(),
+                'tree'        => $this->string()->notNull(),
                 'slot'        => $this->string(),
-                'lft'         => $this->integer()->unsigned(),
-                'rgt'         => $this->integer()->unsigned(),
+                'lft'         => $this->integer()->unsigned()->notNull(),
+                'rgt'         => $this->integer()->unsigned()->notNull(),
+                ]
+            );
+            
+        $this->createTable(
+            '{{%igloo_block_styles}}',
+            [
+                'id'          => $this->primaryKey(),
+                'dateCreated' => $this->dateTime()->notNull(),
+                'dateUpdated' => $this->dateTime()->notNull(),
+                'uid'         => $this->uid()->notNull(),
+                'styles'      => $this->longText()->notNull(),
             ]
         );
 
         $this->createTable(
             '{{%igloo_content_text}}',
             [
-                'id'          => $this->integer()->unsigned(),
+                'id'          => $this->primaryKey(),
                 'dateCreated' => $this->dateTime()->notNull(),
                 'dateUpdated' => $this->dateTime()->notNull(),
-                'uid'         => $this->uid(),
-                'content'     => $this->text(),
+                'uid'         => $this->uid()->notNull(),
+                'content'     => $this->text()->notNull(),
             ]
         );
     }
@@ -49,6 +60,7 @@ class Install extends Migration
     {
         $this->dropTableIfExists('{{%igloo_blocks}}');
         $this->dropTableIfExists('{{%igloo_block_structure}}');
+        $this->dropTableIfExists('{{%igloo_block_styles}}');
         $this->dropTableIfExists('{{%igloo_content_text}}');
     }
 }

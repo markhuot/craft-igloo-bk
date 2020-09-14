@@ -1,8 +1,16 @@
 <style>
     .igloo-space-y-4 > * + * { margin-top: 1rem; }
 </style>
-<div class="igloo-space-y-4">
+<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@2.6.0/dist/alpine.min.js" defer></script>
+<script>
+    window.iglooCpUrl = '{{ cpUrl('igloo') }}'
+    window.csrfTokenName = "{{ craft.app.config.general.csrfTokenName|e('js') }}"
+    window.csrfTokenValue = "{{ craft.app.request.csrfToken|e('js') }}"
+</script>
+<div data-igloo-element-id="{{ element.id }}" class="igloo-space-y-4">
     {% for block in blocks %}
         {{ block.getInputHtml()|raw }}
     {% endfor %}
+
+    {% include 'igloo/components/layers' with {blocks: blocks} only %}
 </div>

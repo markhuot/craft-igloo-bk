@@ -1,1 +1,14 @@
-<div style="display: inline-block; {{ block.getStyleAttribute() }}" contenteditable>{{ block.content }}</div>
+<div x-data="TextBlockController()" data-block-id="{{ block.id }}">
+    <input type="hidden" name="blockId" value="{{ block.id }}">
+    <input type="text"
+           name="block[content]"
+           value="{{ block.content }}" 
+           style="{{ block.getStyleAttribute() }}"
+           x-on:change="handleChange"
+    >
+    <!--
+    <div data-ref="input" style="display: inline-block; {{ block.getStyleAttribute() }}" contenteditable>
+        {{ block.content }}
+    </div>
+    -->
+</div>

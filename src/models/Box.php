@@ -29,6 +29,7 @@ class Box extends Block {
      */
     function append(Block $block)
     {
+        $block->slot = 'children';
         $this->children[] = $block;
         return $this;
     }

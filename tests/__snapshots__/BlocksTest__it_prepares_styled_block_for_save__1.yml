@@ -1,6 +1,6 @@
-type: markhuot\igloo\models\Text
-tableName: '{{%igloo_content_text}}'
-styles:
-    color: red
-data:
+'{{%igloo_blocks}}':
+    type: markhuot\igloo\models\Text
+'{{%igloo_block_styles}}':
+    styles: '{"color":"red"}'
+'{{%igloo_content_text}}':
     content: 'foo bar'

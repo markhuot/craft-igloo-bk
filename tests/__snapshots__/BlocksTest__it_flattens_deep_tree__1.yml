@@ -1,44 +1,31 @@
 -
-    type: markhuot\igloo\models\Box
-    lft: 0
-    rgt: 13
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Box }
+    '{{%igloo_block_structure}}': { lft: 0, rgt: 13 }
 -
-    type: markhuot\igloo\models\Text
-    tableName: '{{%igloo_content_text}}'
-    slot: children
-    lft: 1
-    data: { content: foo }
-    rgt: 2
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
+    '{{%igloo_block_structure}}': { slot: children, lft: 1, rgt: 2 }
+    '{{%igloo_block_styles}}': {  }
+    '{{%igloo_content_text}}': { content: foo }
 -
-    type: markhuot\igloo\models\Box
-    slot: children
-    lft: 3
-    rgt: 10
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Box }
+    '{{%igloo_block_structure}}': { slot: children, lft: 3, rgt: 10 }
 -
-    type: markhuot\igloo\models\Text
-    tableName: '{{%igloo_content_text}}'
-    slot: children
-    lft: 4
-    data: { content: baz }
-    rgt: 5
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
+    '{{%igloo_block_structure}}': { slot: children, lft: 4, rgt: 5 }
+    '{{%igloo_block_styles}}': {  }
+    '{{%igloo_content_text}}': { content: baz }
 -
-    type: markhuot\igloo\models\Text
-    tableName: '{{%igloo_content_text}}'
-    slot: children
-    lft: 6
-    data: { content: qux }
-    rgt: 7
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
+    '{{%igloo_block_structure}}': { slot: children, lft: 6, rgt: 7 }
+    '{{%igloo_block_styles}}': {  }
+    '{{%igloo_content_text}}': { content: qux }
 -
-    type: markhuot\igloo\models\Text
-    tableName: '{{%igloo_content_text}}'
-    slot: children
-    lft: 8
-    data: { content: qid }
-    rgt: 9
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
+    '{{%igloo_block_structure}}': { slot: children, lft: 8, rgt: 9 }
+    '{{%igloo_block_styles}}': {  }
+    '{{%igloo_content_text}}': { content: qid }
 -
-    type: markhuot\igloo\models\Text
-    tableName: '{{%igloo_content_text}}'
-    slot: children
-    lft: 11
-    data: { content: bar }
-    rgt: 12
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
+    '{{%igloo_block_structure}}': { slot: children, lft: 11, rgt: 12 }
+    '{{%igloo_block_styles}}': {  }
+    '{{%igloo_content_text}}': { content: bar }

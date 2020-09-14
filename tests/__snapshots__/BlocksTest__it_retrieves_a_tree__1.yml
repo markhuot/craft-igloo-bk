@@ -1,0 +1,13 @@
+slots:
+    - children
+children:
+    - { content: null, id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: '1', rgt: '2', slots: {  }, slot: children, styles: { borderLeft: null, paddingLeft: null, color: null, fontSize: null } }
+    - { content: null, id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: '3', rgt: '4', slots: {  }, slot: children, styles: { borderLeft: null, paddingLeft: null, color: null, fontSize: null } }
+id: null
+uid: null
+dateCreated: null
+dateUpdated: null
+tree: null
+lft: '0'
+rgt: '5'
+slot: null

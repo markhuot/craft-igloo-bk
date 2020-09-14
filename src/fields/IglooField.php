@@ -6,6 +6,7 @@ use Craft;
 use craft\base\ElementInterface;
 use craft\base\Field;
 use craft\db\Query;
+use markhuot\igloo\assets\FieldAssetBundle;
 use markhuot\igloo\models\Blockquote;
 use markhuot\igloo\models\Box;
 use markhuot\igloo\models\Text;
@@ -15,6 +16,8 @@ class IglooField extends Field {
 
     public function getInputHtml($value, ElementInterface $element = null): string
     {
+        \Craft::$app->view->registerAssetBundle(FieldAssetBundle::class);
+
         $tree = $value ?? uniqid();
 
         $author = new Text('Shakespeare');
@@ -34,12 +37,13 @@ class IglooField extends Field {
         ;
         $blocks = [$box];
         
-        $tree = '6tfhju65ff';
-        // (new Blocks())->saveBlock($box, $tree);
+        $tree = '6tfhju68ff';
+        //(new Blocks())->saveBlock($box, $tree);
         $blocks = (new Blocks())->getTree($tree);
         //dd($blocks);
 
         return Craft::$app->view->renderTemplate('igloo/igloo', [
+            'element' => $element,
             'blocks' => $blocks,
             'tree' => $tree,
         ]);

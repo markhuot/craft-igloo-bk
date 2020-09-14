@@ -32,11 +32,27 @@ trait Styleable {
      */
     function serializeStyleable()
     {
-        return [
-            //'igloo_block_styles' => [
-                'styles' => $this->styles->toArray(),
-            //],
-        ];
+        $data = ['{{%igloo_block_styles}}' => []];
+        $styles = $this->styles->toArray();
+        
+        if (empty($styles)) {
+            return $data;
+        }
+
+        $data['{{%igloo_block_styles}}']['styles'] = json_encode($styles);
+
+        return $data;
+    }
+
+    /**
+     * Unserialize raw data from the persistent storage in to the model
+     * 
+     * @var array $config
+     */
+    function unserializeStyleable($config)
+    {
+        $json = json_decode($config['{{%igloo_block_styles}}']['styles'] ?? "{}", true);
+        $this->setStyles($json);
     }
 
     /**
@@ -53,7 +69,7 @@ trait Styleable {
      * @param array $styles
      * @return static
      */
-    function setStyles($styles = [])
+    function setStyles($styles)
     {
         foreach ($styles as $key => $value) {
             $this->styles->{$key} = $value;

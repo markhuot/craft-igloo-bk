@@ -29,9 +29,37 @@ class Text extends Block {
         parent::__construct(array_merge(['content' => $content], $config));
     }
 
-    function fields()
+    // function fields()
+    // {
+    //     return ['content'];
+    // }
+
+    /**
+     * Serialize the data to the persistent storage
+     */
+    function serialize()
     {
-        return ['content'];
+        $record = parent::serialize();
+
+        if (!empty($this->content)) {
+            $record['{{%igloo_content_text}}'] = [
+                'content' => $this->content,
+            ];
+        }
+
+        return $record;
+    }
+
+    /**
+     * Unserialize the data from the persistent storage
+     */
+    function unserialize($config=[])
+    {
+        parent::unserialize($config);
+
+        $this->content = $config['{{%igloo_content_text}}']['content'] ?? null;
+        
+        return $this;
     }
 
     public static function tableName()

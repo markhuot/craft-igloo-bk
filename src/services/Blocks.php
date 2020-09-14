@@ -11,40 +11,41 @@ class Blocks {
 
     function saveBlock(Block $block, $tree=null)
     {
-        $records = $this->getRecordsFromBlock($block);
         if (empty($tree)) {
-            $tree = uniqid();
+            $tree = $block->tree ?? uniqid();
         }
-        $this->saveRecords($records, $tree);
+
+        $block->prepare();
+        $records = $this->getRecordsFromBlock($block);
+        $records = $this->saveRecords($records, $tree);
+        $records = collect($records)->keyBy('{{%igloo_blocks}}.uid')->toArray();
+        
+        // Add the id to any new blocks so they're tracked against the persistent
+        // storage correctly
+        $block->walkChildren(function ($block) use ($records) {
+            $block->id = $records[$block->uid]['{{%igloo_blocks}}']['id'] ?? null;
+            $block->tree = $records[$block->uid]['{{%igloo_block_structure}}']['tree'] ?? null;
+            $block->lft = $records[$block->uid]['{{%igloo_block_structure}}']['lft'] ?? null;
+            $block->rgt = $records[$block->uid]['{{%igloo_block_structure}}']['rgt'] ?? null;
+        });
+        
+        return $block;
     }
 
     function getRecordsFromBlock(Block $block)
     {
         $map = $block->serialize();
-        return $this->getRecordsFromTree([$map]);
+        return $this->getRecordsFromTree([$map], $block->lft ?? 0);
     }
 
-    function getRecordsFromTree(array $tree, $left = 0)
+    function getRecordsFromTree(array $tree, $left)
     {
         $records = [];
 
         foreach ($tree as $node) {
             $index = count($records);
-            $records[] = array_filter([
-                'id' => $node['id'] ?? null,
-                'uid' => $node['uid'] ?? null,
-                'type' => $node['type'],
-                'tableName' => $node['tableName'] ?? null,
-                'slot' => $node['slot'] ?? null,
-                'lft' => $left,
-                'rgt' => null,
-            ], function ($value) {
-                return $value !== null;
-            });
-
-            if (!empty($node['data'])) {
-                $records[$index]['data'] = $node['data'];
-            }
+            $records[] = $node;
+            $records[$index][Block::STRUCTURE_TABLE_NAME]['lft'] = $left;
 
             if (!empty($node['children'])) {
                 $childRecords = $this->getRecordsFromTree($node['children'], $left+1);
@@ -52,7 +53,8 @@ class Blocks {
                 $left += count($childRecords) * 2;
             }
 
-            $records[$index]['rgt'] = ++$left;
+            $records[$index][Block::STRUCTURE_TABLE_NAME]['rgt'] = ++$left;
+            unset($records[$index]['children']);
             ++$left;
         }
 
@@ -61,73 +63,67 @@ class Blocks {
 
     function saveRecords(array $records, $tree)
     {
-        $recordIds = collect($records)->pluck('uid')->filter()->toArray();
+        $recordIds = collect($records)->pluck(Block::TABLE_NAME . '.uid')->filter()->toArray();
 
         $transaction = \Craft::$app->db->beginTransaction();
 
         $existingRecordIds = (new Query())
             ->select('uid')
-            ->from('{{%igloo_blocks}}')
+            ->from(Block::TABLE_NAME)
             ->where(['uid' => $recordIds])
             ->column();
-
-        // @TODO update existing records
+        $existingRecords = collect($records)
+            ->filter(function ($r) use ($existingRecordIds) {
+                $uid = $r[Block::TABLE_NAME]['uid'] ?? null;
+                return in_array($uid, $existingRecordIds);
+            })
+            ->toArray();
+        foreach ($existingRecords as $record) {
+            $id = $record[Block::TABLE_NAME]['id'];
+            \Craft::$app->db->createCommand()->update(Block::TABLE_NAME, $record[Block::TABLE_NAME], ['id' => $id])->execute();
+            \Craft::$app->db->createCommand()->update(Block::STRUCTURE_TABLE_NAME, $record[Block::STRUCTURE_TABLE_NAME], ['id' => $id])->execute();
+            
+            foreach ($record as $tableName => $data) {
+                if (in_array($tableName, ['{{%igloo_blocks}}', '{{%igloo_block_structure}}'])) {
+                    continue;
+                }
+                
+                if (empty($data)) {
+                    \Craft::$app->db->createCommand()->delete($tableName, ['id' => $id])->execute();
+                }
+                else {
+                    $data['id'] = $id;
+                    \Craft::$app->db->createCommand()->upsert($tableName, $data)->execute();
+                }
+            }
+        }
 
         $newRecordIds = array_diff($recordIds, $existingRecordIds);
         $newRecords = collect($records)
-            ->filter(function ($r) use ($newRecordIds) { return empty($r['uid']) || in_array($r['uid'], $newRecordIds); })
-            ->map(function ($r) use ($tree) {
-                $id = $r['id'] ?? null;
-                $uid = $r['uid'] ?? StringHelper::UUID();
-
-                $records = [
-                    'igloo_blocks' => [
-                        'id' => $id,
-                        'dateCreated' => Db::prepareDateForDb(new \DateTime()),
-                        'dateUpdated' => Db::prepareDateForDb(new \DateTime()),
-                        'uid' => $uid,
-                        'type' => $r['type'],
-                    ],
-                    'igloo_structure' => [
-                        'id' => $id,
-                        'dateCreated' => Db::prepareDateForDb(new \DateTime()),
-                        'dateUpdated' => Db::prepareDateForDb(new \DateTime()),
-                        'uid' => $uid,
-                        'tree' => $tree,
-                        'slot' => $r['slot'] ?? null,
-                        'lft' => $r['lft'] ?? null,
-                        'rgt' => $r['rgt'] ?? null,
-                    ],
-                ];
-                
-                if (!empty($r['data']) && !empty($r['tableName'])) {
-                    $records[$r['tableName']] = array_merge([
-                        'id' => $r['id'] ?? null,
-                        'dateCreated' => Db::prepareDateForDb(new \DateTime()),
-                        'dateUpdated' => Db::prepareDateForDb(new \DateTime()),
-                        'uid' => $uid,
-                    ], $r['data']);
-                }
-
-                return $records;
+            ->filter(function ($r) use ($newRecordIds) {
+                $uid = $r[Block::TABLE_NAME]['uid'] ?? null;
+                return empty($uid) || in_array($uid, $newRecordIds);
             })
             ->toArray();
-            // var_dump($newRecords);
-            // die;
         
-        foreach ($newRecords as $record) {
-            \Craft::$app->db->createCommand()->insert('{{%igloo_blocks}}', $record['igloo_blocks'])->execute();
+        foreach ($newRecords as &$record) {
+            \Craft::$app->db->createCommand()->insert(Block::TABLE_NAME, $record[Block::TABLE_NAME])->execute();
             $blockId = \Craft::$app->db->getLastInsertID();
             
-            $record['igloo_structure']['id'] = $blockId;
-            \Craft::$app->db->createCommand()->insert('{{%igloo_block_structure}}', $record['igloo_structure'])->execute();
-
-            unset($record['igloo_blocks']);
-            unset($record['igloo_structure']);
+            $record[Block::TABLE_NAME]['id'] = $blockId;
+            $record[Block::STRUCTURE_TABLE_NAME]['id'] = $blockId;
+            $record[Block::STRUCTURE_TABLE_NAME]['tree'] = $tree;
+            \Craft::$app->db->createCommand()->insert(Block::STRUCTURE_TABLE_NAME, $record[Block::STRUCTURE_TABLE_NAME])->execute();
             
-            foreach ($record as $tableName => $data) {
-                $data['id'] = $blockId;
-                \Craft::$app->db->createCommand()->insert($tableName, $data)->execute();
+            foreach ($record as $tableName => &$data) {
+                if (in_array($tableName, ['{{%igloo_blocks}}', '{{%igloo_block_structure}}'])) {
+                    continue;
+                }
+
+                if (!empty($data)) {
+                    $data['id'] = $blockId;
+                    \Craft::$app->db->createCommand()->insert($tableName, $data)->execute();
+                }
             }
         }
 
@@ -135,6 +131,37 @@ class Blocks {
         // $deadRecordIds = array_diff($existingRecordIds, $recordIds);
 
         $transaction->commit();
+
+        return collect($existingRecords)
+            ->concat($newRecords)
+            ->sortBy(Block::STRUCTURE_TABLE_NAME . '.lft')
+            ->toArray();
+    }
+
+    /**
+     * Get a block from the persiistent storage by its id or uid
+     * 
+     * @param int $id
+     */
+    function getBlock($id)
+    {
+        if (empty($id)) {
+            return null;
+        }
+
+        $records = (new Query())
+            ->select('s2.*, b.*')
+            ->from(['s' => '{{%igloo_block_structure}}'])
+            ->where(['s.id' => $id])
+            ->innerJoin('{{%igloo_block_structure}} s2', 's2.tree=s.tree and s2.lft>=s.lft and s2.rgt<=s.rgt')
+            ->innerJoin('{{%igloo_blocks}} b', 'b.id=s2.id')
+            ->orderBy(['s2.lft' => SORT_ASC])
+            ->all();
+
+        $records = $this->getTreeContent($records);
+        $tree = $this->makeTree($records);
+
+        return $this->hydrate($tree[0]);
     }
 
     function getTree($tree)
@@ -145,42 +172,7 @@ class Blocks {
             ->where(['tree' => $tree])
             ->orderBy(['lft' => SORT_ASC]);
 
-        $records = collect($blockQuery->all())
-            ->groupBy('type')
-            ->map(function ($records, $type) use ($blockQuery) {
-                $ids = collect($records)->pluck('id')->toArray();
-                $tableName = $type::tableName();
-                if (empty($tableName)) {
-                    return $records;
-                }
-
-                return $blockQuery
-                    ->leftJoin($tableName, "{$tableName}.id={{%igloo_blocks}}.id")
-                    ->where(['{{%igloo_blocks}}.id' => $ids])
-                    ->all();
-            })
-            ->flatten(1)
-            ->sortBy('lft')
-            ->map(function ($record) {
-                $meta = [
-                    'id' => $record['id'],
-                    'dateCreated' => $record['dateCreated'],
-                    'dateUpdated' => $record['dateUpdated'],
-                    'uid' => $record['uid'],
-                    'tree' => $record['tree'],
-                    'slot' => $record['slot'],
-                    'lft' => $record['lft'],
-                    'rgt' => $record['rgt'],
-                    'type' => $record['type'],
-                ];
-                $data = array_diff_key($record, $meta);
-                if (!empty($data)) {
-                    $meta['data'] = $data;
-                }
-                return $meta;
-            })
-            ->toArray();
-        //dd($records);
+        $records = $this->getTreeContent($blockQuery->all());
 
         $tree = $this->makeTree($records);
         //dd($tree);
@@ -188,6 +180,103 @@ class Blocks {
         return array_map(function ($node) {
             return $this->hydrate($node);
         }, $tree);
+    }
+
+    function getTreeContent($records)
+    {
+        return collect($records)
+            ->map(function ($record) {
+                return [
+                    Block::TABLE_NAME => [
+                        'id' => $record['id'],
+                        'dateCreated' => $record['dateCreated'],
+                        'dateUpdated' => $record['dateUpdated'],
+                        'uid' => $record['uid'],
+                        'type' => $record['type'],
+                    ],
+                    Block::STRUCTURE_TABLE_NAME => [
+                        'id' => $record['id'],
+                        'dateCreated' => $record['dateCreated'],
+                        'dateUpdated' => $record['dateUpdated'],
+                        'uid' => $record['uid'],
+                        'tree' => $record['tree'],
+                        'slot' => $record['slot'],
+                        'lft' => $record['lft'],
+                        'rgt' => $record['rgt'],
+                    ],
+                ];
+            })
+            ->groupBy(Block::TABLE_NAME . '.type')
+            ->map(function ($records, $type) {
+                $ids = collect($records)->pluck(Block::TABLE_NAME . '.id')->toArray();
+                $contentTableName = $type::tableName();
+                if (empty($contentTableName)) {
+                    return $records;
+                }
+
+                $content = (new Query())
+                    ->from($contentTableName)
+                    ->where(['id' => $ids])
+                    ->indexBy('id')
+                    ->all();
+
+                if (empty($content)) {
+                    return $records;
+                }
+
+                return collect($records)
+                    ->map(function ($record) use ($content, $contentTableName) {
+                        $recordId = $record[Block::TABLE_NAME]['id'];
+
+                        if (!empty($content[$recordId])) {
+                            $record[$contentTableName] = $content[$recordId];
+                        }
+
+                        return $record;
+                    })
+                    ->toArray();
+            })
+            ->flatten(1)
+            ->sortBy(Block::STRUCTURE_TABLE_NAME . '.lft')
+            
+            // @TODO refactor this to the Styleable trait
+            ->pipe(function ($records) {
+                $styles = (new Query)
+                    ->from('{{%igloo_block_styles}}')
+                    ->where(['id' => $records->pluck(Block::TABLE_NAME . '.id')->toArray()])
+                    ->indexBy('id')
+                    ->all();
+
+                return $records->map(function ($record) use ($styles) {
+                    $recordId = $record[Block::TABLE_NAME]['id'];
+
+                    if (!empty($styles[$recordId])){
+                        $record['{{%igloo_block_styles}}'] = $styles[$recordId];
+                    }
+
+                    return $record;
+                });
+            })
+            // ->map(function ($record) {
+            //     $meta = [
+            //         'id' => $record['id'],
+            //         'dateCreated' => $record['dateCreated'],
+            //         'dateUpdated' => $record['dateUpdated'],
+            //         'uid' => $record['uid'],
+            //         'tree' => $record['tree'],
+            //         'slot' => $record['slot'],
+            //         'lft' => $record['lft'],
+            //         'rgt' => $record['rgt'],
+            //         'type' => $record['type'],
+            //     ];
+            //     $data = array_diff_key($record, $meta);
+            //     if (!empty($data)) {
+            //         $meta['data'] = $data;
+            //     }
+            //     return $meta;
+            // })
+            ->toArray();
+        //dd($records);
     }
 
     function makeTree($records)
@@ -202,11 +291,11 @@ class Blocks {
         $tree[] = $record;
 
         foreach ($records as $nextIndex => $next) {
-            if ((int)$next['lft'] === $record['lft'] + 1) {
+            if ((int)$next[Block::STRUCTURE_TABLE_NAME]['lft'] === $record[Block::STRUCTURE_TABLE_NAME]['lft'] + 1) {
                 // is child
                 $tree[$recordIndex]['children'] = $this->makeTree(array_slice($records, $nextIndex));
             }
-            if ((int)$next['lft'] === $record['rgt'] + 1) {
+            if ((int)$next[Block::STRUCTURE_TABLE_NAME]['lft'] === $record[Block::STRUCTURE_TABLE_NAME]['rgt'] + 1) {
                 // is sibling
                 $recordIndex = count($tree);
                 $tree[] = $next;
@@ -223,14 +312,7 @@ class Blocks {
             return null;
         }
 
-        $recordType = $record['type'];
-        // if (!empty($record['children'])) {
-        //     $record['children'] = array_map(function ($child) {
-        //         return $this->hydrate($child);
-        //     }, $record['children']);
-        //     $record['data']['children'] = $record['children'];
-        // }
-        // $record['data'] = $record['data'] ?? [];
+        $recordType = $record['{{%igloo_blocks}}']['type'];
         $model = new $recordType;
         $model->unserialize($record);
         //$model = $recordType::unserialize($record['data'] ?? []);

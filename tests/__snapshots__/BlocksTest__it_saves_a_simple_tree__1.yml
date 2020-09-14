@@ -3,13 +3,16 @@
     slot: null
     lft: '0'
     rgt: '5'
+    content: null
 -
     type: markhuot\igloo\models\Text
     slot: children
     lft: '1'
     rgt: '2'
+    content: foo
 -
     type: markhuot\igloo\models\Text
     slot: children
     lft: '3'
     rgt: '4'
+    content: bar

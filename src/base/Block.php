@@ -8,11 +8,42 @@ use craft\helpers\StringHelper;
 
 class Block extends Model {
 
+    /**
+     * The table name
+     */
+    const TABLE_NAME = '{{%igloo_blocks}}';
+
+    /**
+     * The table name to store the hierachy
+     */
+    const STRUCTURE_TABLE_NAME = '{{%igloo_block_structure}}';
+
     /** @var string */
     public $id;
 
     /** @var string */
     public $uid;
+
+    /** @var Carbon */
+    public $dateCreated;
+    
+    /** @var Carbon */
+    public $dateUpdated;
+
+    /**
+     * The tree ID this block belongs to. Warning blocks can be a part of
+     * multiple trees so this is just the tree that this block is curerntly
+     * being rendered within. A single block ID could have multiple treeIDs
+     * 
+     * @var string
+     */
+    public $tree;
+
+    /**
+     * The nested set storage
+     */
+    public $lft;
+    public $rgt;
 
     /**
      * The slots this block exposes to be filled with other blocks
@@ -43,9 +74,19 @@ class Block extends Model {
     /**
      * @return string the name of the table associated with this model
      */
-    public static function tableName()
+    static function tableName()
     {
         return null;
+    }
+
+    /**
+     * Returns a string represrntation of the type of block
+     * 
+     * @return string
+     */
+    function getType()
+    {
+        return get_class($this);
     }
 
     /**
@@ -107,7 +148,26 @@ class Block extends Model {
     }
 
     /**
+     * Walk over each child node and call a callback on each child
+     * 
+     * @param closure $callback
+     */
+    function walkChildren($callback)
+    {
+        $callback($this);
+
+        foreach ($this->getChildren() as $child) {
+            $callback($child);
+            $child->walkChildren($callback);
+        }
+
+        return $this;
+    }
+
+    /**
      * Get the plain string names of each slot this block exposes
+     * 
+     * @return string[]
      */
     function getSlotNames()
     {
@@ -148,19 +208,73 @@ class Block extends Model {
     }
 
     /**
+     * Prepare a block for saving to the persistent storage by assigning a UUID. The UUID
+     * can be used to remap anonymous/newly created blocks from memory to the persistent
+     * storage.
+     */
+    function prepare()
+    {
+        if ($this->uid === null) {
+            $this->uid = StringHelper::UUID();
+        }
+
+        if ($this->hasChildren()) {
+            foreach ($this->getChildren() as $child) {
+                $child->prepare();
+            }
+        }
+        
+        return $this;
+    }
+    
+    /**
+     * Remove all identifying info about this block so it could be used in a repeated test
+     * or re-inserted in to the database as a new block/clone.
+     */
+    function anonymize()
+    {
+        $this->id = null;
+        $this->dateCreated = null;
+        $this->dateUpdated = null;
+        $this->uid = null;
+        $this->tree = null;
+        
+        if ($this->hasChildren()) {
+            foreach ($this->getChildren() as $child) {
+                $child->anonymize();
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * Serialize the data for the persistent storage
      *
      * @return array
      */
     function serialize()
     {
-        $data = array_filter([
+        $meta = array_filter([
             'id' => $this->id,
             'uid' => $this->uid,
-            'type' => get_class($this),
-            'tableName' => $this->tableName(),
-            'slot' => $this->slot,
+
         ]);
+
+        $data = array_filter([
+            static::TABLE_NAME => array_merge($meta, [
+                'type' => $this->getType(),
+            ]),
+            static::STRUCTURE_TABLE_NAME => array_merge($meta, array_filter([
+                'tree' => $this->tree,
+                'slot' => $this->slot,
+            ])),
+        ]);
+
+        // $content = $this->toArray();
+        // if (!empty($content)) {
+        //     $data[$this->tableName()] = array_merge($meta, $content);
+        // }
 
         if ($this->hasChildren()) {
             $data['children'] = array_map(function (Block $block) {
@@ -174,11 +288,6 @@ class Block extends Model {
         $traitData = $this->serializeTraits();
         if (!empty($traitData)) {
             $data = array_merge($data, $traitData);
-        }
-
-        $content = $this->toArray();
-        if (!empty($content)) {
-            $data['data'] = $content;
         }
 
         return $data;
@@ -209,7 +318,6 @@ class Block extends Model {
             ->reduce(function ($carry, $item) {
                 return $carry->merge($item);
             }, collect([]))
-            ->filter()
             ->toArray();
 
         return $data;
@@ -221,7 +329,7 @@ class Block extends Model {
      * @var string $prefix
      * @return array
      */
-    function callTraits($prefix)
+    function callTraits($prefix, ...$args)
     {
         $result = [];
 
@@ -230,7 +338,7 @@ class Block extends Model {
         foreach ($traits as $trait) {
             $method = $prefix . $trait->getShortName();
             if ($reflect->hasMethod($method)) {
-                $result[$trait->getShortName()] = $this->{$method}();
+                $result[$trait->getShortName()] = $this->{$method}(...$args);
             }
         }
 
@@ -245,13 +353,40 @@ class Block extends Model {
      */
     function unserialize($config=[])
     {
+        $this->id = $config[static::TABLE_NAME]['id'] ?? null;
+        $this->uid = $config[static::TABLE_NAME]['uid'] ?? null;
+        $this->tree = $config[static::STRUCTURE_TABLE_NAME]['tree'] ?? null;
+        $this->lft = $config[static::STRUCTURE_TABLE_NAME]['lft'] ?? null;
+        $this->rgt = $config[static::STRUCTURE_TABLE_NAME]['rgt'] ?? null;
+
         foreach (($config['children'] ?? []) as $child) {
-            $slot = $child['slot'];
-            $this->{$slot}[] = (new \markhuot\igloo\services\Blocks())->hydrate($child);
+            $slot = $child[static::STRUCTURE_TABLE_NAME]['slot'];
+            $block = (new \markhuot\igloo\services\Blocks())->hydrate($child);
+            $block->slot = $slot;
+            $this->{$slot}[] = $block;
         }
 
-        foreach (($config['data'] ?? []) as $k => $v) {
-            $this->{$k} = $v;
+        $this->callTraits('unserialize', $config);
+
+        return $this;
+    }
+
+    function set($key, $value)
+    {
+        $method = 'set' . ucfirst($key);
+        if (method_exists($this, $method)) {
+            $this->{$method}($value);
+            return $this;
+        }
+
+        $this->{$key} = $value;
+        return $this;
+    }
+
+    function fill(array $values)
+    {
+        foreach ($values as $k => $v) {
+            $this->set($k, $v);
         }
 
         return $this;
@@ -262,26 +397,26 @@ class Block extends Model {
      *
      * @return array
      */
-    function fields()
-    {
-        return [];
+    // function fields()
+    // {
+    //     return [];
 
-        // $traitFields = [];
-        // $reflect = new \ReflectionClass($this);
-        // $traits = $reflect->getTraits();
-        // foreach ($traits as $trait) {
-        //     $method = lcfirst($trait->getShortName()).'Fields';
-        //     if ($reflect->hasMethod($method)) {
-        //         $traitFields = array_merge($traitFields, $this->{$method}());
-        //     }
-        // }
+    //     // $traitFields = [];
+    //     // $reflect = new \ReflectionClass($this);
+    //     // $traits = $reflect->getTraits();
+    //     // foreach ($traits as $trait) {
+    //     //     $method = lcfirst($trait->getShortName()).'Fields';
+    //     //     if ($reflect->hasMethod($method)) {
+    //     //         $traitFields = array_merge($traitFields, $this->{$method}());
+    //     //     }
+    //     // }
 
-        // return array_merge(parent::fields(), [
-        //     '__type' => function  () {
-        //         return get_class($this);
-        //     },
-        // ], $traitFields);
-    }
+    //     // return array_merge(parent::fields(), [
+    //     //     '__type' => function  () {
+    //     //         return get_class($this);
+    //     //     },
+    //     // ], $traitFields);
+    // }
 
     /**
      * Get the template that should render

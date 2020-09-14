@@ -1,0 +1,39 @@
+<script>
+    function openPanel(html) {
+        let el = document.body.querySelector('[data-styles-panel]')
+        if (!el) {
+            el = document.createElement('div')
+            el.setAttribute('data-styles-panel', '')
+            el.setAttribute('style', 'position: absolute; top: 0; left: 0; z-index: 100; background: white;')
+            document.body.appendChild(el)
+        }
+        el.innerHTML = html
+    }
+
+    function LayerController() { return {
+        handleStylesClick(event) {
+            event.preventDefault()
+            fetch(`{{ cpUrl('igloo/blocks/${this.id}/styles') }}`)
+                .then(res => res.text())
+                .then(openPanel)
+        }
+    }}
+</script>
+
+{% macro tree(blocks) %}
+    <ul>
+        {% for block in blocks %}
+            <li style="margin-left: 2rem;">
+                <div x-data="{...LayerController(), id: {{block.id}}}">
+                    {{block.type}}
+                    <a href="#" x-on:click="handleStylesClick">Styles</a>
+                </div>
+                {{ _self.tree(block.getChildren()) }}
+            </li>
+        {% endfor %}
+    </ul>
+{% endmacro %}
+
+<div>
+    {{ _self.tree(blocks) }}
+</div>
