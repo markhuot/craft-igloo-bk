@@ -36,8 +36,6 @@ class Blocks {
         $block->walkChildren(function ($block) use ($records) {
             $block->id = $records[$block->uid]['{{%igloo_blocks}}']['id'] ?? null;
             $block->tree = $records[$block->uid]['{{%igloo_block_structure}}']['tree'] ?? null;
-            $block->lft = $records[$block->uid]['{{%igloo_block_structure}}']['lft'] ?? null;
-            $block->rgt = $records[$block->uid]['{{%igloo_block_structure}}']['rgt'] ?? null;
         });
         
         return $block;

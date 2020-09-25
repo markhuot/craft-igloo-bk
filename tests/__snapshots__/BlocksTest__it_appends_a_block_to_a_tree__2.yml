@@ -1,0 +1,12 @@
+-
+    slots: [children]
+    id: '214'
+    uid: e23d4a7b-4313-429f-8b45-c0689bec165c
+    dateCreated: null
+    dateUpdated: null
+    tree: 5f6e510a21661
+    lft: 0
+    rgt: 5
+    slot: null
+    children: [{ content: foo, id: '215', uid: b5d9497d-d1cd-4685-9e47-f382ddb2a071, dateCreated: null, dateUpdated: null, tree: 5f6e510a21661, lft: 1, rgt: 2, slots: [children], slot: null, children: {  }, attributes: { id: null, className: markhuot\igloo\valueobjects\Attributes, classlist: [''], style: { borderLeft: null, paddingLeft: null, color: null, fontSize: null, weight: null } } }, { content: bar, id: '216', uid: d5150290-530b-4170-b9e2-41b0f71a4a7a, dateCreated: null, dateUpdated: null, tree: 5f6e510a21661, lft: 3, rgt: 4, slots: [children], slot: null, children: {  }, attributes: { id: null, className: markhuot\igloo\valueobjects\Attributes, classlist: [''], style: { borderLeft: null, paddingLeft: null, color: null, fontSize: null, weight: null } } }]
+    attributes: { id: null, className: markhuot\igloo\valueobjects\Attributes, classlist: [''], style: { borderLeft: null, paddingLeft: null, color: null, fontSize: null, weight: null } }

@@ -74,6 +74,13 @@ class Block extends Model {
     public $children;
 
     /**
+     * The parent collection of this block
+     *
+     * @var BlockCollection
+     */
+    public $collection;
+
+    /**
      * Init the block and any traits attached to the block
      */
     function init()
@@ -167,37 +174,11 @@ class Block extends Model {
      * child blocks. E.g., a Box contains a flat array of children while a
      * Blockquote may contain fixed "content" and "author" child blocks.
      *
-     * @return Block[]
+     * @return \markhuot\igloo\base\BlockCollection
      */
     function getChildren()
     {
         return $this->children;
-
-        // $children = [];
-        // 
-        // foreach ($this->getSlotNames() as $slotName) {
-        //     if (!empty($this->{$slotName})) {
-        //         $child = $this->{$slotName};
-        //         if (is_array($child)) {
-        //             foreach ($child as $c) {
-        //                 // @TODO shouldn't have to set this when pulling data out
-        //                 // it should already be set when the slots are hydrated from
-        //                 // the database
-        //                 $c->slot = $slotName;
-        //             }
-        //             $children = array_merge($children, $child);
-        //         }
-        //         else {
-        //             // @TODO shouldn't have to set this when pulling data out
-        //             // it should already be set when the slots are hydrated from
-        //             // the database
-        //             $child->slot = $slotName;
-        //             $children[] = $child;
-        //         }
-        //     }
-        // }
-        //
-        // return $children;
     }
 
     /**
@@ -213,15 +194,33 @@ class Block extends Model {
 
     /**
      * Walk over the node and each child node by calling a callback
-     * 
-     * @param closure $callback
+     *
+     * @param callable $callback
+     * @return Block
      */
-    function walkChildren($callback)
+    function walkChildren(callable $callback)
     {
         $callback($this);
 
         foreach ($this->getChildren() as $child) {
             $child->walkChildren($callback);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Walk over the parents moving up the tree
+     *
+     * @param callable $callback
+     * @return Block
+     */
+    function walkParents(callable $callback)
+    {
+        $pointer = $this;
+        while ($pointer) {
+            $callback($pointer);
+            $pointer = $pointer->collection->block ?? null;
         }
 
         return $this;
@@ -282,11 +281,10 @@ class Block extends Model {
     }
 
     /**
-     * 03
-     * - 07
-     *   - 12
-     *   - 34
-     *   - 56
+     * Set the lft/rgt based on the passed initial lft
+     *
+     * @param int $initial
+     * @return mixed|null
      */
     function setLftRgt($initial = 0)
     {

@@ -235,3 +235,59 @@ it('saves styles', function () {
     $text = (new \markhuot\igloo\services\Blocks())->getBlock($text->id);
     expect($text->attributes->style->fontSize)->toBe('28px');
 });
+
+it('appends a block to a tree', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append(new \markhuot\igloo\models\Text('foo'));
+    $tree->append(new \markhuot\igloo\models\Text('bar'));
+    expect($tree[0]->content)->toBe('foo');
+    expect($tree[0]->lft)->toBe(0);
+    expect($tree[0]->rgt)->toBe(1);
+    expect($tree[1]->content)->toBe('bar');
+    expect($tree[1]->lft)->toBe(2);
+    expect($tree[1]->rgt)->toBe(3);
+    assertMatchesSnapshot($tree->anonymize()->flatten()->serialize());
+});
+
+it('prepends a block to a tree', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->prepend(new \markhuot\igloo\models\Text('bar'));
+    $tree->prepend(new \markhuot\igloo\models\Text('foo'));
+    expect($tree[0]->content)->toBe('foo');
+    expect($tree[0]->lft)->toBe(0);
+    expect($tree[0]->rgt)->toBe(1);
+    expect($tree[1]->content)->toBe('bar');
+    expect($tree[1]->lft)->toBe(2);
+    expect($tree[1]->rgt)->toBe(3);
+    assertMatchesSnapshot($tree->anonymize()->flatten()->serialize());
+});
+
+it('inserts a block to a specific place', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append(new \markhuot\igloo\models\Text('foo'));
+    $tree->append(new \markhuot\igloo\models\Text('baz'));
+    $tree->insertAtIndex(new \markhuot\igloo\models\Text('bar'), 1);
+    expect($tree[1]->content)->toBe('bar');
+    assertMatchesSnapshot($tree->anonymize()->flatten()->serialize());
+});
+
+it('inserts a deeply nested block', function () {
+    $greatGrandParent = new \markhuot\igloo\models\Text('greatGrandParent');
+    $grandParent = new \markhuot\igloo\models\Text('grandParent');
+    $parent = new \markhuot\igloo\models\Text('parent');
+    $child = new \markhuot\igloo\models\Text('child');
+    $grandChild = new \markhuot\igloo\models\Text('grandChild');
+    $greatGrandParent->children->append(
+        $grandParent->children->append(
+            $parent->children->append(
+                $child->children->append($grandChild)->block
+            )->block
+        )->block
+    );
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append($greatGrandParent);
+    $secondGrandParent = new \markhuot\igloo\models\Text('secondGreatGrandParent');
+    $tree->append($secondGrandParent);
+    $parent->children->append(new \markhuot\igloo\models\Text('second child'));
+    expect($secondGrandParent->lft)->toBe(12);
+});

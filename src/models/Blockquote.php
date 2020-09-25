@@ -7,17 +7,6 @@ use markhuot\igloo\base\Block;
 
 class Blockquote extends Block {
 
-    /** 
-     * The quote content
-     * 
-     * @child
-     * @var Text
-     */
-    //public $content;
-
-    /** @var Text */
-    //public $author;
-
     /**
      * @inheritdoc
      */

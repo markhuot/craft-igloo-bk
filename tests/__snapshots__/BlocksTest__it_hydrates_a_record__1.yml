@@ -10,6 +10,7 @@ slots:
     - children
 slot: null
 children: {  }
+collection: null
 attributes:
     id: null
     className: markhuot\igloo\valueobjects\Attributes
