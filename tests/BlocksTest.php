@@ -208,8 +208,8 @@ it('retrieves a tree', function () {
     $box->append(new \markhuot\igloo\models\Text());
     $box->append(new \markhuot\igloo\models\Text());
     (new \markhuot\igloo\services\Blocks())->saveBlock($box, $tree);
-    $tree = (new \markhuot\igloo\services\Blocks())->getTree($tree)[0];
-    assertMatchesSnapshot($tree->flatten()->serialize());
+    $tree = (new \markhuot\igloo\services\Blocks())->getTree($tree)->first();
+    expect($box->flatten()->serialize())->toEqual($tree->flatten()->serialize());
 });
 
 it('retrieves a block', function () {

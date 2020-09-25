@@ -183,16 +183,12 @@ class Blocks {
             ->orderBy(['lft' => SORT_ASC]);
 
         $records = $this->getTreeContent($blockQuery->all());
+
         if (empty($records)) {
             return [];
         }
 
-        $tree = $this->makeTree($records);
-        //dd($tree);
-        
-        return array_map(function ($node) {
-            return $this->hydrate($node);
-        }, $tree);
+        return $this->hydrateRecords($records);
     }
 
     function getTreeContent($records)
