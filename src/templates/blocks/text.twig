@@ -3,11 +3,11 @@
     <input type="text"
            name="block[content]"
            value="{{ block.content }}" 
-           style="{{ block.getStyleAttribute() }}"
+           style="{{ block.attributes.style }}"
            x-on:change="handleChange"
     >
     <!--
-    <div data-ref="input" style="display: inline-block; {{ block.getStyleAttribute() }}" contenteditable>
+    <div data-ref="input" style="display: inline-block; {{ block.attributes.style }}" contenteditable>
         {{ block.content }}
     </div>
     -->

@@ -1,14 +1,14 @@
 -
     '{{%igloo_blocks}}': { type: markhuot\igloo\models\Blockquote }
-    '{{%igloo_block_styles}}': {  }
     '{{%igloo_block_structure}}': { lft: 0, rgt: 5 }
+    '{{%igloo_block_attributes}}': {  }
 -
     '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
     '{{%igloo_block_structure}}': { slot: content, lft: 1, rgt: 2 }
-    '{{%igloo_block_styles}}': {  }
+    '{{%igloo_block_attributes}}': {  }
     '{{%igloo_content_text}}': { content: foo }
 -
     '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
     '{{%igloo_block_structure}}': { slot: author, lft: 3, rgt: 4 }
-    '{{%igloo_block_styles}}': {  }
+    '{{%igloo_block_attributes}}': {  }
     '{{%igloo_content_text}}': { content: bar }

@@ -1,0 +1,6 @@
+-
+    type: markhuot\igloo\models\Text
+    slot: null
+    lft: '0'
+    rgt: '1'
+    content: 'foo bar'

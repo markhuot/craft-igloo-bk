@@ -6,13 +6,13 @@
     content: null
 -
     type: markhuot\igloo\models\Text
-    slot: children
+    slot: null
     lft: '1'
     rgt: '2'
     content: foo
 -
     type: markhuot\igloo\models\Text
-    slot: children
+    slot: null
     lft: '3'
     rgt: '4'
     content: bar

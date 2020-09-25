@@ -1,5 +1,14 @@
-'{{%igloo_blocks}}':
-    type: markhuot\igloo\models\Box
-children:
-    - { '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }, '{{%igloo_block_structure}}': { slot: children }, '{{%igloo_block_styles}}': {  }, '{{%igloo_content_text}}': { content: foo } }
-    - { '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }, '{{%igloo_block_structure}}': { slot: children }, '{{%igloo_block_styles}}': {  }, '{{%igloo_content_text}}': { content: bar } }
+-
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Box }
+    '{{%igloo_block_structure}}': { lft: 0, rgt: 5 }
+    '{{%igloo_block_attributes}}': {  }
+-
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
+    '{{%igloo_block_structure}}': { lft: 1, rgt: 2 }
+    '{{%igloo_block_attributes}}': {  }
+    '{{%igloo_content_text}}': { content: foo }
+-
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
+    '{{%igloo_block_structure}}': { lft: 3, rgt: 4 }
+    '{{%igloo_block_attributes}}': {  }
+    '{{%igloo_content_text}}': { content: bar }

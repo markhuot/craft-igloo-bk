@@ -1,3 +1,27 @@
+function PanelBackController() { return {
+    back(event) {
+        const panel = this.$el.parentNode.closest('[x-data]')
+        panel.parentNode.removeChild(panel)
+    }
+}}
+
+function LayersController() { return {
+    handleAddClick(event) {
+        fetch(`${window.iglooCpUrl}/tree/${this.tree}/add-layer`)
+            .then(res => res.text())
+            .then(html => document.body.innerHTML += html)
+    }
+}}
+
+function LayerController() { return {
+    handleStylesClick(event) {
+        event.preventDefault()
+        fetch(`${window.iglooCpUrl}/blocks/${this.blockId}/styles`)
+            .then(res => res.text())
+            .then(html => document.body.innerHTML += html)
+    }
+}}
+
 function TextBlockController() { return {
     handleChange(event) {
         const clone = this.$el.cloneNode(true)

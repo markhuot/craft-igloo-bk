@@ -5,8 +5,12 @@ namespace markhuot\igloo\base;
 use Craft;
 use craft\base\Model;
 use craft\helpers\StringHelper;
+use markhuot\igloo\base\BlockCollection;
 
 class Block extends Model {
+
+    use Attributes;
+    use Controls;
 
     /**
      * The table name
@@ -42,15 +46,15 @@ class Block extends Model {
     /**
      * The nested set storage
      */
-    public $lft;
-    public $rgt;
+    public $lft = 0;
+    public $rgt = 1;
 
     /**
      * The slots this block exposes to be filled with other blocks
      * 
      * @var string[]
      */
-    public $slots = [];
+    public $slots = ['children'];
 
     /**
      * When rendered as a child of another block this will
@@ -63,11 +67,19 @@ class Block extends Model {
     public $slot;
 
     /**
+     * Any children that are a child of this block
+     * 
+     * @var BlockCollection
+     */
+    public $children;
+
+    /**
      * Init the block and any traits attached to the block
      */
     function init()
     {
         parent::init();
+        $this->children = new BlockCollection($this);
         $this->callTraits('init');
     }
 
@@ -77,6 +89,34 @@ class Block extends Model {
     static function tableName()
     {
         return null;
+    }
+
+    /**
+     * Get a property or a slot
+     * 
+     * @return mixed
+     */
+    function __get($key)
+    {
+        if (in_array($key, $this->getSlotNames())) {
+            // @TODO scope this so it returns only blocks in the requested slot
+            //return new BlockCollection($this->children->where('slot', '=', $key));
+            return new SlottedBlockCollection($this->children, $key);
+        }
+
+        return parent::__get($key);
+    }
+
+    /**
+     * Get the icon for the block
+     * 
+     * @return string
+     */
+    function getIcon()
+    {
+        return '<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-box-seam" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+        </svg>';
     }
 
     /**
@@ -90,13 +130,35 @@ class Block extends Model {
     }
 
     /**
+     * Gets a readable label based on the type
+     * 
+     * @return string
+     */
+    function getTypeLabel()
+    {
+        $reflect = new \ReflectionClass($this);
+        return $reflect->getShortName();
+    }
+
+    /**
+     * Get a human readable label for the block. This is commonly overridden by
+     * subclasses to provide a more detalied label
+     * 
+     * @return string
+     */
+    function getLabel()
+    {
+        return $this->getTypeLabel();
+    }
+
+    /**
      * Whether the block has child blocks
      *
      * @return bool
      */
     function hasChildren()
     {
-        return !empty($this->getChildren());
+        return $this->children->count() > 0;
     }
 
     /**
@@ -109,31 +171,33 @@ class Block extends Model {
      */
     function getChildren()
     {
-        $children = [];
+        return $this->children;
 
-        foreach ($this->getSlotNames() as $slotName) {
-            if (!empty($this->{$slotName})) {
-                $child = $this->{$slotName};
-                if (is_array($child)) {
-                    foreach ($child as $c) {
-                        // @TODO shouldn't have to set this when pulling data out
-                        // it should already be set when the slots are hydrated from
-                        // the database
-                        $c->slot = $slotName;
-                    }
-                    $children = array_merge($children, $child);
-                }
-                else {
-                    // @TODO shouldn't have to set this when pulling data out
-                    // it should already be set when the slots are hydrated from
-                    // the database
-                    $child->slot = $slotName;
-                    $children[] = $child;
-                }
-            }
-        }
-
-        return $children;
+        // $children = [];
+        // 
+        // foreach ($this->getSlotNames() as $slotName) {
+        //     if (!empty($this->{$slotName})) {
+        //         $child = $this->{$slotName};
+        //         if (is_array($child)) {
+        //             foreach ($child as $c) {
+        //                 // @TODO shouldn't have to set this when pulling data out
+        //                 // it should already be set when the slots are hydrated from
+        //                 // the database
+        //                 $c->slot = $slotName;
+        //             }
+        //             $children = array_merge($children, $child);
+        //         }
+        //         else {
+        //             // @TODO shouldn't have to set this when pulling data out
+        //             // it should already be set when the slots are hydrated from
+        //             // the database
+        //             $child->slot = $slotName;
+        //             $children[] = $child;
+        //         }
+        //     }
+        // }
+        //
+        // return $children;
     }
 
     /**
@@ -148,7 +212,7 @@ class Block extends Model {
     }
 
     /**
-     * Walk over each child node and call a callback on each child
+     * Walk over the node and each child node by calling a callback
      * 
      * @param closure $callback
      */
@@ -157,11 +221,21 @@ class Block extends Model {
         $callback($this);
 
         foreach ($this->getChildren() as $child) {
-            $callback($child);
             $child->walkChildren($callback);
         }
 
         return $this;
+    }
+
+    function flatten()
+    {
+        $nodes = [];
+
+        $this->walkChildren(function ($node) use (&$nodes) {
+            $nodes[] = $node;
+        });
+
+        return new BlockCollection($this, $nodes);
     }
 
     /**
@@ -205,6 +279,22 @@ class Block extends Model {
         }
 
         return false;
+    }
+
+    /**
+     * 03
+     * - 07
+     *   - 12
+     *   - 34
+     *   - 56
+     */
+    function setLftRgt($initial = 0)
+    {
+        $this->lft = $initial;
+        
+        return $this->rgt = $this->getChildren()->reduce(function ($carry, $child) {
+            return $child->setLftRgt($carry) + 1;
+        }, $this->lft + 1);
     }
 
     /**
@@ -268,7 +358,11 @@ class Block extends Model {
             static::STRUCTURE_TABLE_NAME => array_merge($meta, array_filter([
                 'tree' => $this->tree,
                 'slot' => $this->slot,
-            ])),
+                'lft' => $this->lft,
+                'rgt' => $this->rgt,
+            ], function ($value) {
+                return $value !== null;
+            })),
         ]);
 
         // $content = $this->toArray();
@@ -276,11 +370,11 @@ class Block extends Model {
         //     $data[$this->tableName()] = array_merge($meta, $content);
         // }
 
-        if ($this->hasChildren()) {
-            $data['children'] = array_map(function (Block $block) {
-                return $block->serialize();
-            }, $this->getChildren());;
-        }
+        //if ($this->hasChildren()) {
+        //    $data['children'] = array_map(function (Block $block) {
+        //        return $block->serialize();
+        //    }, $this->getChildren());;
+        //}
 
         // @todo serialize traits, like "Styleable" so that we
         // get a new top-level key called styleable with the styles
@@ -334,12 +428,28 @@ class Block extends Model {
         $result = [];
 
         $reflect = new \ReflectionClass($this);
+
         $traits = $reflect->getTraits();
         foreach ($traits as $trait) {
             $method = $prefix . $trait->getShortName();
             if ($reflect->hasMethod($method)) {
                 $result[$trait->getShortName()] = $this->{$method}(...$args);
             }
+        }
+        
+        // Traits are not currently reflected from parent classes. This is a
+        // known feature of PHP. You must manually loop over parent classes
+        // to see applied traits, https://www.php.net/manual/en/reflectionclass.gettraits.php
+        $parent = $reflect->getParentClass();
+        while ($parent) {
+            $traits = $parent->getTraits();
+            foreach ($traits as $trait) {
+                $method = $prefix . $trait->getShortName();
+                if ($parent->hasMethod($method)) {
+                    $result[$trait->getShortName()] = $this->{$method}(...$args);
+                }
+            }
+            $parent = $parent->getParentClass();
         }
 
         return $result;
@@ -356,15 +466,16 @@ class Block extends Model {
         $this->id = $config[static::TABLE_NAME]['id'] ?? null;
         $this->uid = $config[static::TABLE_NAME]['uid'] ?? null;
         $this->tree = $config[static::STRUCTURE_TABLE_NAME]['tree'] ?? null;
+        $this->slot = $config[static::STRUCTURE_TABLE_NAME]['slot'] ?? null;
         $this->lft = $config[static::STRUCTURE_TABLE_NAME]['lft'] ?? null;
         $this->rgt = $config[static::STRUCTURE_TABLE_NAME]['rgt'] ?? null;
 
-        foreach (($config['children'] ?? []) as $child) {
-            $slot = $child[static::STRUCTURE_TABLE_NAME]['slot'];
-            $block = (new \markhuot\igloo\services\Blocks())->hydrate($child);
-            $block->slot = $slot;
-            $this->{$slot}[] = $block;
-        }
+        // foreach (($config['children'] ?? []) as $child) {
+        //     $slot = $child[static::STRUCTURE_TABLE_NAME]['slot'];
+        //     $block = (new \markhuot\igloo\services\Blocks())->hydrate($child);
+        //     $block->slot = $slot;
+        //     $this->{$slot}[] = $block;
+        // }
 
         $this->callTraits('unserialize', $config);
 

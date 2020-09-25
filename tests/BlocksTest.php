@@ -8,8 +8,27 @@ it('prepares block for save', function () {
     assertMatchesSnapshot($block->serialize());
 });
 
+it('supports css classlist', function () {
+    $block = new \markhuot\igloo\models\Text();
+    $block->attributes->classlist->add('foo');
+    expect($block->attributes->classlist)->toContain('foo');
+    expect($block->attributes->classlist->contains('foo'))->toBeTrue();
+    $block->attributes->classlist->remove('foo');
+    expect($block->attributes->classlist)->not->toContain('foo');
+    expect($block->attributes->classlist->contains('foo'))->toBeFalse();
+    $block->attributes->classlist->toggle('foo');
+    expect($block->attributes->classlist)->toContain('foo');
+    $block->attributes->classlist->toggle('foo');
+    expect($block->attributes->classlist)->not->toContain('foo');
+    $block->attributes->classlist->add('foo');
+    $block->attributes->classlist->replace('foo', 'bar');
+    expect($block->attributes->classlist)->not->toContain('foo');
+    expect($block->attributes->classlist)->toContain('bar');
+    expect($block->attributes->className)->toBe('bar');
+});
+
 it('prepares styled block for save', function () {
-    $block = new \markhuot\igloo\models\Text('foo bar', ['styles' => ['color' => 'red']]);
+    $block = new \markhuot\igloo\models\Text('foo bar', ['attributes' => ['style' => ['color' => 'red']]]);
     assertMatchesSnapshot($block->serialize());
 });
 
@@ -17,22 +36,21 @@ it('prepares block children for save', function () {
     $box = new \markhuot\igloo\models\Box();
     $box->append(new \markhuot\igloo\models\Text('foo'));
     $box->append(new \markhuot\igloo\models\Text('bar'));
-    assertMatchesSnapshot($box->serialize());
+    assertMatchesSnapshot($box->flatten()->serialize());
 });
 
 it('flattens tree', function () {
     $box = new \markhuot\igloo\models\Box();
     $box->append(new \markhuot\igloo\models\Text('foo'));
     $box->append(new \markhuot\igloo\models\Text('bar'));
-    $records = (new \markhuot\igloo\services\Blocks())->getRecordsFromBlock($box);
-    assertMatchesSnapshot($records);
+    assertMatchesSnapshot($box->flatten()->serialize());
 });
 
 it('flattens a tree with named children', function () {
     $blockquote = new \markhuot\igloo\models\Blockquote();
-    $blockquote->content = new \markhuot\igloo\models\Text('foo');
-    $blockquote->author = new \markhuot\igloo\models\Text('bar');
-    $records = (new \markhuot\igloo\services\Blocks())->getRecordsFromBlock($blockquote);
+    $blockquote->content->append(new \markhuot\igloo\models\Text('foo'));
+    $blockquote->author->append(new \markhuot\igloo\models\Text('bar'));
+    $records = $blockquote->flatten()->serialize();
     assertMatchesSnapshot($records);
 });
 
@@ -45,7 +63,7 @@ it('flattens deep tree', function () {
         ->append(new \markhuot\igloo\models\Text('qid'))
     );
     $box->append(new \markhuot\igloo\models\Text('bar'));
-    $records = (new \markhuot\igloo\services\Blocks())->getRecordsFromBlock($box);
+    $records = $box->flatten()->serialize();
     assertMatchesSnapshot($records);
 });
 
@@ -82,8 +100,8 @@ it('hydrates traits', function () {
         '{{%igloo_content_text}}' => [
             'content' => 'foo bar baz',
         ],
-        '{{%igloo_block_styles}}' => [
-            'styles' => '{"color":"red"}',
+        '{{%igloo_block_attributes}}' => [
+            'data' => '{"style":{"color":"red"}}',
         ],
     ];
     $block = (new \markhuot\igloo\services\Blocks())->hydrate($record);
@@ -91,79 +109,47 @@ it('hydrates traits', function () {
 });
 
 it('hydrates record children', function () {
-    $box = [
-        '{{%igloo_blocks}}' => [
-            'type' => \markhuot\igloo\models\Box::class,
-        ],
-        'children' => [
-            [
-                '{{%igloo_blocks}}' => [
-                    'type' => \markhuot\igloo\models\Text::class,
-                ],
-                '{{%igloo_structure}}' => [
-                    'slot' => 'children'
-                ],
-            ],
-            [
-                '{{%igloo_blocks}}' => [
-                    'type' => \markhuot\igloo\models\Blockquote::class,
-                ],
-                '{{%igloo_structure}}' => [
-                    'slot' => 'children',
-                ],
-                'children' => [
-                    [
-                        '{{%igloo_blocks}}' => [
-                            'type' => \markhuot\igloo\models\Text::class,
-                        ],
-                        '{{%igloo_structure}}' => [
-                            'slot' => 'content'
-                        ],
-                        '{{%igloo_content_text}}' => [
-                            'content' => 'To be or not to be...'
-                        ]
-                    ],
-                    [
-                        '{{%igloo_blocks}}' => [
-                            'type' => \markhuot\igloo\models\Text::class,
-                        ],
-                        '{{%igloo_structure}}' => [
-                            'slot' => 'author',
-                        ],
-                        '{{%igloo_content_text}}' => [
-                            'content' => 'Some Guy'
-                        ]
-                    ],
-                ],
-            ],
-            [
-                '{{%igloo_blocks}}' => [
-                    'type' => \markhuot\igloo\models\Text::class,
-                ],
-                '{{%igloo_structure}}' => [
-                    'slot' => 'children'
-                ],
-            ],
-        ],
-    ];
+    $blockquote = new \markhuot\igloo\models\Blockquote;
+    $blockquote->content->append(new \markhuot\igloo\models\Text('To be or not to be...'));
+    $blockquote->author->append(new \markhuot\igloo\models\Text('Some Guy'));
+
     $box = new \markhuot\igloo\models\Box;
     $box->append(new \markhuot\igloo\models\Text);
-    $box->append(new \markhuot\igloo\models\Blockquote([
-        'content' => [new \markhuot\igloo\models\Text('To be or not to be...')],
-        'author' => [new \markhuot\igloo\models\Text('Some Guy')],
-    ]));
+    $box->append($blockquote);
     $box->append(new \markhuot\igloo\models\Text);
-    //$box = (new \markhuot\igloo\services\Blocks())->getRecordsFromBlock($box);
-    //dump((new \markhuot\igloo\services\Blocks())->hydrate($box->serialize()));
-    $block = (new \markhuot\igloo\services\Blocks())->hydrate($box->serialize());
-    assertMatchesSnapshot($block);
+    $block = (new \markhuot\igloo\services\Blocks())->hydrateRecords($box->flatten()->serialize());
+    expect($box->flatten()->serialize())->toEqual($block->flatten()->serialize());
+});
+
+it('saves a single record', function () {
+    $box = new \markhuot\igloo\models\Text('foo bar');
+    $records = $box->flatten()->serialize();
+    $tree = uniqid();
+    $records = (new \markhuot\igloo\services\Blocks())->saveRecords($records, $tree);
+    $result = (new \craft\db\Query)
+        ->from(['b' => '{{%igloo_blocks}}'])
+        ->innerJoin('{{%igloo_block_structure}} s', 's.id=b.id')
+        ->leftJoin('{{%igloo_content_text}} t', 't.id=b.id')
+        ->where(['s.tree' => $tree])
+        ->all();
+    $result = collect($result)
+        ->map(function ($row) {
+            unset($row['id']);
+            unset($row['uid']);
+            unset($row['dateCreated']);
+            unset($row['dateUpdated']);
+            unset($row['tree']);
+            return $row;
+        })
+        ->toArray();
+    assertMatchesSnapshot($result);
 });
 
 it('saves a simple tree', function () {
     $box = new \markhuot\igloo\models\Box();
     $box->append(new \markhuot\igloo\models\Text('foo'));
     $box->append(new \markhuot\igloo\models\Text('bar'));
-    $records = (new \markhuot\igloo\services\Blocks())->getRecordsFromBlock($box);
+    $records = $box->flatten()->serialize();
     $tree = uniqid();
     (new \markhuot\igloo\services\Blocks())->saveRecords($records, $tree);
     $result = (new \craft\db\Query)
@@ -223,7 +209,7 @@ it('retrieves a tree', function () {
     $box->append(new \markhuot\igloo\models\Text());
     (new \markhuot\igloo\services\Blocks())->saveBlock($box, $tree);
     $tree = (new \markhuot\igloo\services\Blocks())->getTree($tree)[0];
-    assertMatchesSnapshot($tree->anonymize());
+    assertMatchesSnapshot($tree->flatten()->serialize());
 });
 
 it('retrieves a block', function () {
@@ -232,7 +218,7 @@ it('retrieves a block', function () {
     (new \markhuot\igloo\services\Blocks())->saveBlock($box);
     expect($box->id)->not->toBeEmpty();
     $fetchedBox = (new \markhuot\igloo\services\Blocks())->getBlock($box->id);
-    expect($fetchedBox)->toEqual($box);
+    expect($fetchedBox->flatten()->serialize())->toEqual($box->flatten()->serialize());
 });
 
 it('fills data', function () {
@@ -243,9 +229,9 @@ it('fills data', function () {
 
 it('saves styles', function () {
     $text = new \markhuot\igloo\models\Text('foo');
-    $text->styles->fontSize = '28px';
+    $text->attributes->style->fontSize = '28px';
     (new \markhuot\igloo\services\Blocks())->saveBlock($text);
 
     $text = (new \markhuot\igloo\services\Blocks())->getBlock($text->id);
-    expect($text->styles->fontSize)->toBe('28px');
+    expect($text->attributes->style->fontSize)->toBe('28px');
 });

@@ -1,0 +1,30 @@
+{
+  "name": "craft-igloo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markhuot/craft-igloo.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/markhuot/craft-igloo/issues"
+  },
+  "homepage": "https://github.com/markhuot/craft-igloo#readme",
+  "devDependencies": {
+    "autoprefixer": "^10.0.0",
+    "postcss": "^8.0.5",
+    "postcss-loader": "^4.0.2",
+    "tailwindcss": "^1.8.10",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
+  }
+}

@@ -1,13 +1,4 @@
-slots:
-    - children
-children:
-    - { content: null, id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: '1', rgt: '2', slots: {  }, slot: children, styles: { borderLeft: null, paddingLeft: null, color: null, fontSize: null } }
-    - { content: null, id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: '3', rgt: '4', slots: {  }, slot: children, styles: { borderLeft: null, paddingLeft: null, color: null, fontSize: null } }
-id: null
-uid: null
-dateCreated: null
-dateUpdated: null
-tree: null
-lft: '0'
-rgt: '5'
-slot: null
+-
+    '{{%igloo_blocks}}': { id: '311', uid: d489f372-4193-4078-b337-0c68c91baa34, type: markhuot\igloo\models\Box }
+    '{{%igloo_block_structure}}': { id: '311', uid: d489f372-4193-4078-b337-0c68c91baa34, tree: 5f6d243731718, lft: '0', rgt: '5' }
+    '{{%igloo_block_attributes}}': {  }

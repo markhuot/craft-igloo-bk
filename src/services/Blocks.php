@@ -6,8 +6,19 @@ use craft\db\Query;
 use craft\helpers\Db;
 use craft\helpers\StringHelper;
 use markhuot\igloo\base\Block;
+use markhuot\igloo\base\BlockCollection;
 
 class Blocks {
+
+    function saveTree(array $tree)
+    {
+        $treeId = $tree[0]->tree ?? uniqod();
+
+        $records = $this->getRecordsFromTree(array_map(function ($block) {
+            return $block->prepare()->serialize();
+        }, $tree), 0);
+        $records = $this->saveRecords($records, $treeId);
+    }
 
     function saveBlock(Block $block, $tree=null)
     {
@@ -16,7 +27,7 @@ class Blocks {
         }
 
         $block->prepare();
-        $records = $this->getRecordsFromBlock($block);
+        $records = $block->flatten()->serialize();
         $records = $this->saveRecords($records, $tree);
         $records = collect($records)->keyBy('{{%igloo_blocks}}.uid')->toArray();
         
@@ -45,17 +56,17 @@ class Blocks {
         foreach ($tree as $node) {
             $index = count($records);
             $records[] = $node;
-            $records[$index][Block::STRUCTURE_TABLE_NAME]['lft'] = $left;
+            //$records[$index][Block::STRUCTURE_TABLE_NAME]['lft'] = $left;
 
             if (!empty($node['children'])) {
                 $childRecords = $this->getRecordsFromTree($node['children'], $left+1);
                 $records = array_merge($records, $childRecords);
-                $left += count($childRecords) * 2;
+                //$left += count($childRecords) * 2;
             }
 
-            $records[$index][Block::STRUCTURE_TABLE_NAME]['rgt'] = ++$left;
+            //$records[$index][Block::STRUCTURE_TABLE_NAME]['rgt'] = ++$left;
             unset($records[$index]['children']);
-            ++$left;
+            //++$left;
         }
 
         return $records;
@@ -159,9 +170,8 @@ class Blocks {
             ->all();
 
         $records = $this->getTreeContent($records);
-        $tree = $this->makeTree($records);
-
-        return $this->hydrate($tree[0]);
+        $foo = $this->hydrateRecords($records)->first();
+        return $foo;
     }
 
     function getTree($tree)
@@ -173,6 +183,9 @@ class Blocks {
             ->orderBy(['lft' => SORT_ASC]);
 
         $records = $this->getTreeContent($blockQuery->all());
+        if (empty($records)) {
+            return [];
+        }
 
         $tree = $this->makeTree($records);
         //dd($tree);
@@ -242,7 +255,7 @@ class Blocks {
             // @TODO refactor this to the Styleable trait
             ->pipe(function ($records) {
                 $styles = (new Query)
-                    ->from('{{%igloo_block_styles}}')
+                    ->from('{{%igloo_block_attributes}}')
                     ->where(['id' => $records->pluck(Block::TABLE_NAME . '.id')->toArray()])
                     ->indexBy('id')
                     ->all();
@@ -251,7 +264,7 @@ class Blocks {
                     $recordId = $record[Block::TABLE_NAME]['id'];
 
                     if (!empty($styles[$recordId])){
-                        $record['{{%igloo_block_styles}}'] = $styles[$recordId];
+                        $record['{{%igloo_block_attributes}}'] = $styles[$recordId];
                     }
 
                     return $record;
@@ -306,6 +319,11 @@ class Blocks {
         return $tree;
     }
 
+    function appendToTree($block)
+    {
+        // @TODO
+    }
+
     function hydrate($record)
     {
         if (empty($record)) {
@@ -318,6 +336,33 @@ class Blocks {
         //$model = $recordType::unserialize($record['data'] ?? []);
         // @TODO add ->parent in to each child so you can look back up the tree
         return $model;
+    }
+
+    function hydrateRecords($records)
+    {
+        $collection = new BlockCollection;
+
+        $record = array_shift($records);
+        $block = $this->hydrate($record);
+        $collection->append($block);
+
+        while (count($records)) {
+            $next = array_shift($records);
+            
+            // next is child
+            if ((int)$next[Block::STRUCTURE_TABLE_NAME]['lft'] === (int)$record[Block::STRUCTURE_TABLE_NAME]['lft'] + 1) {
+                $block->children->concat($this->hydrateRecords(array_merge([$next], $records)));
+            }
+            
+            // next is sibling
+            if ((int)$next[Block::STRUCTURE_TABLE_NAME]['lft'] === (int)$record[Block::STRUCTURE_TABLE_NAME]['rgt'] + 1) {
+                $block = $this->hydrate($next);
+                $record = $next;
+                $collection->append($block);
+            }
+        }
+
+        return $collection;
     }
 
 }

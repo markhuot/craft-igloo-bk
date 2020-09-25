@@ -34,13 +34,13 @@ class Install extends Migration
             );
             
         $this->createTable(
-            '{{%igloo_block_styles}}',
+            '{{%igloo_block_attributes}}',
             [
                 'id'          => $this->primaryKey(),
                 'dateCreated' => $this->dateTime()->notNull(),
                 'dateUpdated' => $this->dateTime()->notNull(),
                 'uid'         => $this->uid()->notNull(),
-                'styles'      => $this->longText()->notNull(),
+                'data'        => $this->longText()->notNull(),
             ]
         );
 
@@ -60,7 +60,7 @@ class Install extends Migration
     {
         $this->dropTableIfExists('{{%igloo_blocks}}');
         $this->dropTableIfExists('{{%igloo_block_structure}}');
-        $this->dropTableIfExists('{{%igloo_block_styles}}');
+        $this->dropTableIfExists('{{%igloo_block_attributes}}');
         $this->dropTableIfExists('{{%igloo_content_text}}');
     }
 }

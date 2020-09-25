@@ -15,13 +15,6 @@ class Box extends Block {
     ];
 
     /**
-     * Any blocks that are nested inside this box
-     *
-     * @var Block[]
-     */
-    public $children = [];
-
-    /**
      * Append a child block
      *
      * @param Block $block
@@ -29,8 +22,7 @@ class Box extends Block {
      */
     function append(Block $block)
     {
-        $block->slot = 'children';
-        $this->children[] = $block;
+        $this->children->append($block);
         return $this;
     }
 

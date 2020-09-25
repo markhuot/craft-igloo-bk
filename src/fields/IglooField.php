@@ -20,15 +20,16 @@ class IglooField extends Field {
 
         $tree = $value ?? uniqid();
 
+        /*
         $author = new Text('Shakespeare');
-        $author->styles->color = 'red';
+        $author->attributes->style->color = 'red';
         
         $blockquote = new Blockquote;
         $blockquote->content = [new Text('To be or not to be...')];
         $blockquote->author = [$author];
-        $blockquote->styles->borderLeft = '2px solid green';
-        $blockquote->styles->paddingLeft = '0.5rem';
-        $blockquote->styles->color = 'green';
+        $blockquote->attributes->style->borderLeft = '2px solid green';
+        $blockquote->attributes->style->paddingLeft = '0.5rem';
+        $blockquote->attributes->style->color = 'green';
         
         $box = (new Box())
             ->append(new Text('A preamble to the quote!'))
@@ -36,6 +37,7 @@ class IglooField extends Field {
             ->append(new Text('This is some postscript of our quote!'))
         ;
         $blocks = [$box];
+        */
         
         $tree = '6tfhju68ff';
         //(new Blocks())->saveBlock($box, $tree);

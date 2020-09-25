@@ -6,10 +6,12 @@ dateUpdated: null
 tree: null
 lft: null
 rgt: null
-slots: {  }
+slots:
+    - children
 slot: null
-styles:
-    borderLeft: null
-    paddingLeft: null
-    color: null
-    fontSize: null
+children: {  }
+attributes:
+    id: null
+    className: markhuot\igloo\valueobjects\Attributes
+    classlist: ['']
+    style: { borderLeft: null, paddingLeft: null, color: null, fontSize: null, weight: null }

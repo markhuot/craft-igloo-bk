@@ -11,9 +11,14 @@ class Styles extends BaseObject {
     public $paddingLeft = null;
     public $color = null;
     public $fontSize = null;
+    public $weight = null;
 
     function __construct($config = [])
     {
+        if (empty($config)) {
+            return parent::__construct();
+        }
+
         $newConfig = [];
 
         foreach ($config as $k => $v) {
@@ -21,6 +26,19 @@ class Styles extends BaseObject {
         }
 
         parent::__construct($newConfig);
+    }
+
+    function setAll($values)
+    {
+        if (empty($values)) {
+            return $this;
+        }
+
+        foreach ($values as $key => $value) {
+            $this->{$key} = $value;
+        }
+
+        return $this;
     }
 
     function toArray()
@@ -36,6 +54,11 @@ class Styles extends BaseObject {
             }
         }
         return $styles;
+    }
+
+    function __toString()
+    {
+        return $this->toAttributeString();
     }
 
     function toAttributeString()

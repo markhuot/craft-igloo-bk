@@ -1,9 +1,9 @@
 slots:
     - children
 children:
-    - { content: null, id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: null, rgt: null, slots: {  }, slot: children, styles: { borderLeft: null, paddingLeft: null, color: null, fontSize: null } }
-    - { content: [{ content: 'To be or not to be...', id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: null, rgt: null, slots: {  }, slot: content, styles: { borderLeft: null, paddingLeft: null, color: null, fontSize: null } }], author: [{ content: 'Some Guy', id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: null, rgt: null, slots: {  }, slot: author, styles: { borderLeft: null, paddingLeft: null, color: null, fontSize: null } }], slots: [content, author], children: {  }, id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: null, rgt: null, slot: children, styles: { borderLeft: null, paddingLeft: null, color: null, fontSize: null } }
-    - { content: null, id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: null, rgt: null, slots: {  }, slot: children, styles: { borderLeft: null, paddingLeft: null, color: null, fontSize: null } }
+    - { content: null, id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: null, rgt: null, slots: {  }, slot: children, attributes: { id: null, className: markhuot\igloo\valueobjects\Attributes, classlist: [''], style: { borderLeft: null, paddingLeft: null, color: null, fontSize: null, weight: null } } }
+    - { content: [{ content: 'To be or not to be...', id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: null, rgt: null, slots: {  }, slot: content, attributes: { id: null, className: markhuot\igloo\valueobjects\Attributes, classlist: [''], style: { borderLeft: null, paddingLeft: null, color: null, fontSize: null, weight: null } } }], author: [{ content: 'Some Guy', id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: null, rgt: null, slots: {  }, slot: author, attributes: { id: null, className: markhuot\igloo\valueobjects\Attributes, classlist: [''], style: { borderLeft: null, paddingLeft: null, color: null, fontSize: null, weight: null } } }], slots: [content, author], children: {  }, id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: null, rgt: null, slot: children, attributes: { id: null, className: markhuot\igloo\valueobjects\Attributes, classlist: [''], style: { borderLeft: null, paddingLeft: null, color: null, fontSize: null, weight: null } } }
+    - { content: null, id: null, uid: null, dateCreated: null, dateUpdated: null, tree: null, lft: null, rgt: null, slots: {  }, slot: children, attributes: { id: null, className: markhuot\igloo\valueobjects\Attributes, classlist: [''], style: { borderLeft: null, paddingLeft: null, color: null, fontSize: null, weight: null } } }
 id: null
 uid: null
 dateCreated: null
@@ -12,3 +12,8 @@ tree: null
 lft: null
 rgt: null
 slot: null
+attributes:
+    id: null
+    className: markhuot\igloo\valueobjects\Attributes
+    classlist: ['']
+    style: { borderLeft: null, paddingLeft: null, color: null, fontSize: null, weight: null }

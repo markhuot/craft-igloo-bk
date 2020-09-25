@@ -34,7 +34,7 @@ class BlockController extends Controller {
         unset($props['CRAFT_CSRF_TOKEN']);
         
         $block = (new \markhuot\igloo\services\Blocks())->getBlock($id);
-        $block->setStyles($props);
+        $block->attributes->setAll($props);
         
         (new \markhuot\igloo\services\Blocks())->saveBlock($block);
 
