@@ -117,7 +117,9 @@ it('hydrates record children', function () {
     $box->append(new \markhuot\igloo\models\Text);
     $box->append($blockquote);
     $box->append(new \markhuot\igloo\models\Text);
+    //dump($box->flatten()->serialize());
     $block = (new \markhuot\igloo\services\Blocks())->hydrateRecords($box->flatten()->serialize());
+    //dump($block->flatten()->serialize());
     expect($box->flatten()->serialize())->toEqual($block->flatten()->serialize());
 });
 
@@ -290,4 +292,13 @@ it('inserts a deeply nested block', function () {
     $tree->append($secondGrandParent);
     $parent->children->append(new \markhuot\igloo\models\Text('second child'));
     expect($secondGrandParent->lft)->toBe(12);
+});
+
+it('finds block index in collection', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append($foo = new \markhuot\igloo\models\Text('foo'));
+    $tree->append($bar = new \markhuot\igloo\models\Text('bar'));
+    $tree->append($baz = new \markhuot\igloo\models\Text('baz'));
+    expect($tree->getIndexOfBlock($baz))->toBe(2);
+    expect($tree->getBlocksAfterIndex(1)->toArray())->toBe([$bar, $baz]);
 });

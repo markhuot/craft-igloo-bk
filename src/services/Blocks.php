@@ -313,11 +313,6 @@ class Blocks {
         return $tree;
     }
 
-    function appendToTree($block)
-    {
-        // @TODO
-    }
-
     function hydrate($record)
     {
         if (empty($record)) {

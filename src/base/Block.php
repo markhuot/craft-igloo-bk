@@ -295,6 +295,26 @@ class Block extends Model {
         }, $this->lft + 1);
     }
 
+    function next()
+    {
+	    if (!$this->collection) {
+		    return false;
+	    }
+
+	    $index = $this->collection->getIndexOfBlock($this);
+	    return $this->collection->getBlocksAfterIndex($index + 1)->first();
+    }
+
+    function nextAll()
+    {
+	    if (!$this->collection) {
+		    return new BlockCollection($this);
+	    }
+
+	    $index = $this->collection->getIndexOfBlock($this);
+	    return $this->collection->getBlocksAfterIndex($index + 1);
+    }
+
     /**
      * Prepare a block for saving to the persistent storage by assigning a UUID. The UUID
      * can be used to remap anonymous/newly created blocks from memory to the persistent

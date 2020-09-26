@@ -128,7 +128,7 @@ class BlockCollection implements \Iterator, \ArrayAccess {
      */
     function insertAtIndex(Block $block, $index)
     {
-        // Get the new lft of our
+        // Get the new lft of our block
         $lft = $this->getLftAtIndex($index);
 
         // Reset the lft/rgt of the block to be inserted and grab the size of the block
@@ -152,6 +152,11 @@ class BlockCollection implements \Iterator, \ArrayAccess {
         if (isset($this->block->rgt)) {
             $this->block->walkParents(function ($parent) use ($size) {
                 $parent->rgt += $size;
+
+                $parent->nextAll()->walkChildren(function ($sibling) use ($size) {
+                    $sibling->lft += $size;
+                    $sibling->rgt += $size;
+                });
             });
         }
 
@@ -159,9 +164,29 @@ class BlockCollection implements \Iterator, \ArrayAccess {
         return $this;
     }
 
-    function getIndexOfBlock(Block $block)
+    function getIndexOfBlock(Block $needle)
     {
+	foreach ($this->blocks as $index => $block) {
+	    if ($block === $needle) {
+                return $index;
+            }
+        }
 
+	return false;
+    }
+
+    function getBlocksAfterIndex($index)
+    {
+        return new static($this->block, array_slice($this->blocks, $index));
+    }
+
+    function walkChildren($callback)
+    {
+	foreach ($this->blocks as $block) {
+            $block->walkChildren($callback);
+	}
+
+	return $this;
     }
 
     /**
