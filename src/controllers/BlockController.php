@@ -3,6 +3,7 @@
 namespace markhuot\igloo\controllers;
 
 use craft\web\Controller;
+use markhuot\igloo\base\Block;
 
 class BlockController extends Controller {
 
@@ -26,7 +27,14 @@ class BlockController extends Controller {
     function actionDelete($id)
     {
         $block = (new \markhuot\igloo\services\Blocks)->getBlock($id);
-        (new \markhuot\igloo\services\Blocks)->delete($block);
+        $tree = (new \markhuot\igloo\services\Blocks)->getTree($block->tree);
+        $tree->walkChildren(function (Block $child) use ($id) {
+            if ($child->id === $id && $child->collection) {
+                $index = $child->collection->getIndexOfBlock($child);
+                $child->collection->deleteAtIndex($index);
+            }
+        });
+        (new \markhuot\igloo\services\Blocks())->saveTree($tree);
 
         return $this->asJson([]);
     }
