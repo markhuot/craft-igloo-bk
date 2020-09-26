@@ -23,7 +23,7 @@ class TreeController extends Controller {
         $type = \Craft::$app->request->getParam('block.type');
 
         $tree = (new \markhuot\igloo\services\Blocks)->getTree($tree);
-        $tree[] = new $type;
+        $tree->append(new $type);
         $tree = (new \markhuot\igloo\services\Blocks)->saveTree($tree);
 
         return $this->asJson([

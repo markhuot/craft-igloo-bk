@@ -2,7 +2,7 @@
     {% include 'igloo/components/back' %}
     <p class="py-4"><strong class="inline-block text-2xl">Add Layer</strong></p>
     {% for block in blocks %}
-        <form action="{{ cpUrl('igloo/tree/{{ tree }}/store-new-layer') }}" method="post">
+        <form action="{{ cpUrl("igloo/tree/#{tree}/store-new-layer") }}" method="post">
             {{ csrfInput() }}
             <input type="text" name="block[type]" value="{{ block.getType() }}">
             <button class="text-blue-500">

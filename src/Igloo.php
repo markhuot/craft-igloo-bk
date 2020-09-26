@@ -29,6 +29,7 @@ class Igloo extends Plugin {
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
                 $event->rules['POST igloo/blocks/upsert'] = 'igloo/block/upsert';
+                $event->rules['DELETE igloo/blocks/<id:\d+>'] = 'igloo/block/delete';
                 $event->rules['GET igloo/blocks/<id:\d+>/styles'] = 'igloo/block/styles';
                 $event->rules['POST igloo/blocks/<id:\d+>/styles'] = 'igloo/block/store';
                 $event->rules['GET igloo/tree/<tree:.+>/add-layer'] = 'igloo/tree/add-layer';

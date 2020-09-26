@@ -2,7 +2,7 @@
     <ul class="">
         {% for block in blocks %}
             <li class="" style="">
-                <div class="flex border-t border-solid border-gray-200 py-1 px-4" x-data="{...LayerController(), blockId: {{block.id}}}" style="padding-left: calc(1rem + {{ level * 2 }}rem);">
+                <div class="flex border-t border-solid border-gray-200 py-1 px-4" x-data="{...LayerController(), blockId: {{block.id}}}" data-block-layer data-block-id="{{block.id}}" style="padding-left: calc(1rem + {{ level * 2 }}rem);">
                     <div>{{ block.getIcon()|raw }}</div>
                     <div class="flex-grow truncate">{{ block.getLabel() }}</div>
                     <a class="text-blue-500 inline-block p-2" href="#" x-on:click="handleStylesClick">

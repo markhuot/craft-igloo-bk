@@ -16,7 +16,19 @@ class BlockController extends Controller {
         
         (new \markhuot\igloo\services\Blocks())->saveBlock($block);
         
-        return $this->asJson($block->serialize());
+        return $this->asJson([
+            'components' => [
+                "[data-block-layer][data-block-id=\"{$block->id}\"]" => $this->getView()->renderPageTemplate('igloo/components/layer', ['block' => $block]),
+            ]
+        ]);
+    }
+
+    function actionDelete($id)
+    {
+        $block = (new \markhuot\igloo\services\Blocks)->getBlock($id);
+        (new \markhuot\igloo\services\Blocks)->delete($block);
+
+        return $this->asJson([]);
     }
 
     function actionStyles($id)
@@ -40,7 +52,7 @@ class BlockController extends Controller {
 
         $resp = $this->asJson([
             'components' => [
-                "[data-block-id=\"{$block->id}\"]" => $this->getView()->renderPageTemplate('igloo/blocks/text', ['block' => $block]),
+                "[data-block-input][data-block-id=\"{$block->id}\"]" => $this->getView()->renderPageTemplate('igloo/blocks/text', ['block' => $block]),
             ]
         ]);
 

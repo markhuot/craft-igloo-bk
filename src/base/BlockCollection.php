@@ -4,7 +4,7 @@ namespace markhuot\igloo\base;
 
 use Tightenco\Collect\Support\Collection;
 
-class BlockCollection implements \Iterator, \ArrayAccess {
+class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
 
     /** @var Block */
     public $block;
@@ -118,6 +118,11 @@ class BlockCollection implements \Iterator, \ArrayAccess {
         return $lft;
     }
 
+    function deleteAtIndex($index)
+    {
+        return $this->insertAtIndex(null, $index);
+    }
+
     /**
      * Insert a block at a specified index
      *
@@ -126,7 +131,7 @@ class BlockCollection implements \Iterator, \ArrayAccess {
      * @return $this
      * @throws \Exception
      */
-    function insertAtIndex(Block $block, $index)
+    function insertAtIndex(Block $block=null, $index)
     {
         // Get the new lft of our block
         $lft = $this->getLftAtIndex($index);
@@ -134,18 +139,32 @@ class BlockCollection implements \Iterator, \ArrayAccess {
         // Reset the lft/rgt of the block to be inserted and grab the size of the block
         // after insertion. All subsequent blocks will be adjusted by $size to make room
         // for the new block
-        $rgt = $block->setLftRgt($lft);
-        $size = $rgt - $lft + 1;
+        if ($block === null) {
+            // @todo make this a function to getBlockAtIndex that throws a index not found error
+            $rgt = $this->blocks[$index]->rgt;
+            $size = -($rgt - $lft +1);
+        }
+        else {
+            $rgt = $block->setLftRgt($lft);
+            $size = $rgt - $lft + 1;
+        }
 
         for ($i=$index; $i<count($this->blocks); $i++) {
             $this->blocks[$i]->setLftRgt($this->blocks[$i]->lft + $size);
         }
 
         // Store the collection this block has been inserted in to
-        $block->collection = $this;
+        if ($block) {
+            $block->collection = $this;
+        }
 
         // Now that all the lft/rgt are set we can insert the block in to the array
-        array_splice($this->blocks, $index, 0, [$block]);
+        if ($block === null) {
+            array_splice($this->blocks, $index, 1);
+        }
+        else {
+            array_splice($this->blocks, $index, 0, [$block]);
+        }
 
         // Finally, update the parent block's lft/rgt and allow that to continue bubbling
         // up until all the necessary parents are updated
@@ -213,6 +232,13 @@ class BlockCollection implements \Iterator, \ArrayAccess {
         return $this->insertAtIndex($block, count($this->blocks));
     }
 
+    function push(...$blocks)
+    {
+        $this->blocks = array_merge($this->blocks, $blocks);
+
+        return $this;
+    }
+
     /**
      * Recursively add the blocks on to the end of the collection
      *
@@ -236,16 +262,16 @@ class BlockCollection implements \Iterator, \ArrayAccess {
         return array_reduce($this->blocks, $callback, $initial);
     }
 
+    function map(callable $callback)
+    {
+        return array_map($callback, $this->blocks);
+    }
+
     function flatten()
     {
         return new static(null, array_merge(...array_map(function ($block) {
             return $block->flatten()->toArray();
         }, $this->blocks)));
-    }
-
-    function count()
-    {
-        return count($this->blocks);
     }
 
     function first()
@@ -280,6 +306,11 @@ class BlockCollection implements \Iterator, \ArrayAccess {
         return new BlockCollection($this->block, array_map(function ($block) {
             return $block->anonymize();
         }, $this->blocks));
+    }
+
+    function count()
+    {
+        return count($this->blocks);
     }
 
     function current()

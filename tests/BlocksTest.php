@@ -200,8 +200,7 @@ it('resaves an existing block without affecting nested set', function () {
     expect($previousLft = $child->lft)->not->toBeEmpty();
     
     (new \markhuot\igloo\services\Blocks())->saveBlock($child);
-    expect($child->lft)->toBe($previousLft);
-    
+    expect($child->lft)->toBe($previousLft); 
 });
 
 it('retrieves a tree', function () {
@@ -221,6 +220,16 @@ it('retrieves a block', function () {
     expect($box->id)->not->toBeEmpty();
     $fetchedBox = (new \markhuot\igloo\services\Blocks())->getBlock($box->id);
     expect($fetchedBox->flatten()->serialize())->toEqual($box->flatten()->serialize());
+});
+
+it('retrieves a block from a tree with the correct lft/rgt', function () {
+    $parent = new \markhuot\igloo\models\Box;
+    $parent->append($child = new \markhuot\igloo\models\Box);
+    (new \markhuot\igloo\services\Blocks)->saveBlock($parent);
+
+    $fetchedChild = (new \markhuot\igloo\services\Blocks)->getBlock($child->id);
+    expect($child->lft)->toBe($fetchedChild->lft);
+    expect($child->rgt)->toBe($fetchedChild->rgt);
 });
 
 it('fills data', function () {
@@ -294,6 +303,17 @@ it('inserts a deeply nested block', function () {
     expect($secondGrandParent->lft)->toBe(12);
 });
 
+it('deletes a block', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append($one = new \markhuot\igloo\models\Text('one'));
+    $tree->append($two = new \markhuot\igloo\models\Text('two'));
+    $tree->append($three = new \markhuot\igloo\models\Text('threr'));
+    $tree->deleteAtIndex(1);
+
+    expect($three->lft)->toBe(2);
+    expect($three->rgt)->toBe(3);
+})->only();
+
 it('finds block index in collection', function () {
     $tree = new \markhuot\igloo\base\BlockCollection;
     $tree->append($foo = new \markhuot\igloo\models\Text('foo'));
@@ -301,4 +321,19 @@ it('finds block index in collection', function () {
     $tree->append($baz = new \markhuot\igloo\models\Text('baz'));
     expect($tree->getIndexOfBlock($baz))->toBe(2);
     expect($tree->getBlocksAfterIndex(1)->toArray())->toBe([$bar, $baz]);
+});
+
+it('allows block (and slotted block) collection array access and iterator', function () {
+    $blockquote = new \markhuot\igloo\models\Blockquote;
+    $blockquote->content->append($content = new \markhuot\igloo\models\Text('content'));
+    $blockquote->author->append($author = new \markhuot\igloo\models\Text('author'));
+
+    expect(count($blockquote->content))->toBe(1);
+    expect($blockquote->content[0])->toBe($content);
+    foreach ($blockquote->content as $child) {
+        expect($child)->toBe($content);
+    }
+
+    expect(count($blockquote->children))->toBe(2);
+    expect($blockquote->children[1])->toBe($author);
 });

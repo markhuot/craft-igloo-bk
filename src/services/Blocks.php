@@ -10,13 +10,14 @@ use markhuot\igloo\base\BlockCollection;
 
 class Blocks {
 
-    function saveTree(array $tree)
+    function saveTree($tree)
     {
-        $treeId = $tree[0]->tree ?? uniqod();
+        $treeId = $tree[0]->tree ?? uniqid();
 
-        $records = $this->getRecordsFromTree(array_map(function ($block) {
-            return $block->prepare()->serialize();
-        }, $tree), 0);
+        //$records = $this->getRecordsFromTree(array_map(function ($block) {
+        //    return $block->prepare()->serialize();
+        //}, $tree), 0);
+        $records = $tree->flatten()->serialize();
         $records = $this->saveRecords($records, $treeId);
     }
 
@@ -183,7 +184,7 @@ class Blocks {
         $records = $this->getTreeContent($blockQuery->all());
 
         if (empty($records)) {
-            return [];
+            return new BlockCollection;
         }
 
         return $this->hydrateRecords($records);
@@ -333,21 +334,23 @@ class Blocks {
 
         $record = array_shift($records);
         $block = $this->hydrate($record);
-        $collection->append($block);
+        $collection->push($block);
 
         while (count($records)) {
             $next = array_shift($records);
             
             // next is child
             if ((int)$next[Block::STRUCTURE_TABLE_NAME]['lft'] === (int)$record[Block::STRUCTURE_TABLE_NAME]['lft'] + 1) {
-                $block->children->concat($this->hydrateRecords(array_merge([$next], $records)));
+                //$block->children->concat($this->hydrateRecords(array_merge([$next], $records)));
+                $block->children->push(...$this->hydrateRecords(array_merge([$next], $records)));
             }
             
             // next is sibling
             if ((int)$next[Block::STRUCTURE_TABLE_NAME]['lft'] === (int)$record[Block::STRUCTURE_TABLE_NAME]['rgt'] + 1) {
                 $block = $this->hydrate($next);
                 $record = $next;
-                $collection->append($block);
+                // $collection->append($block);
+                $collection->push($block);
             }
         }
 

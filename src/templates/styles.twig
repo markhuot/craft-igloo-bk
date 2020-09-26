@@ -32,7 +32,7 @@
 
     <hr>
 
-    <button class="text-red-500">Delete {{ block.getTypeLabel() }}</button>
+    <button class="text-red-500" name="delete" value="1" x-on:click="handleDelete">Delete {{ block.getTypeLabel() }}</button>
 
     {#
     {{ block.getControlHtml()|raw }}

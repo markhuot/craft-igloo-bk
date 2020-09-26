@@ -1,3 +1,12 @@
+function handleAjaxResponse({components}) {
+    for (const selector in components) {
+        const elements = Array.from(document.querySelectorAll(selector))
+        elements.forEach(el => {
+            el.outerHTML = components[selector]
+        })
+    }
+}
+
 function PanelBackController() { return {
     back(event) {
         const panel = this.$el.parentNode.closest('[x-data]')
@@ -30,8 +39,8 @@ function TextBlockController() { return {
         const body = new FormData(form)
         body.append(window.csrfTokenName, window.csrfTokenValue)
         fetch(`${window.iglooCpUrl}/blocks/upsert`, {method: 'POST', body})
-            .then(res => res.text())
-            .then(body => console.log('BODY', body))
+            .then(res => res.json())
+            .then(handleAjaxResponse)
             .catch(err => console.log('ERROR', err))
     }
 }}
@@ -45,14 +54,17 @@ function StylePanel() { return {
         body.append(window.csrfTokenName, window.csrfTokenValue)
         fetch(`${window.iglooCpUrl}/blocks/${this.blockId}/styles`, {method: 'POST', body})
             .then(res => res.json())
-            .then(({components}) => {
-                for (const selector in components) {
-                    const elements = Array.from(document.querySelectorAll(selector))
-                    elements.forEach(el => {
-                        el.outerHTML = components[selector]
-                    })
-                }
-            })
+            .then(handleAjaxResponse)
+            .catch(err => console.log('ERROR', err))
+    },
+    handleDelete(event) {
+        event.preventDefault()
+        const body = new FormData(document.createElement('form'))
+        body.append('_method', 'DELETE')
+        body.append(window.csrfTokenName, window.csrfTokenValue)
+        fetch(`${window.iglooCpUrl}/blocks/${this.blockId}`, {method: 'POST', body})
+            .then(res => res.json())
+            .then(handleAjaxResponse)
             .catch(err => console.log('ERROR', err))
     }
 }}
