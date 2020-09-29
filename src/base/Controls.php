@@ -16,6 +16,7 @@ trait Controls {
             new TextControl('style[color]', $this->attributes->style->color, ['section' => 'Typography']),
             new TextControl('style[weight]', $this->attributes->style->weight, ['section' => 'Typography']),
             new TextControl('style[fontSize]', $this->attributes->style->fontSize, ['section' => 'Typography']),
+            new TextControl('style[textTransform]', $this->attributes->style->textTransform, ['section' => 'Typography']),
         ];
     }
 

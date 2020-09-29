@@ -3,6 +3,5 @@
 .idea
 .phpunit.result.cache
 storage
-config
 .env
 .mysql

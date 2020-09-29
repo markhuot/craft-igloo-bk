@@ -87,7 +87,7 @@ class Block extends Model {
     function init()
     {
         parent::init();
-        $this->children = new BlockCollection($this);
+        $this->children = new BlockCollection($this->tree, $this);
         $this->callTraits('init');
     }
 
@@ -107,8 +107,6 @@ class Block extends Model {
     function __get($key)
     {
         if (in_array($key, $this->getSlotNames())) {
-            // @TODO scope this so it returns only blocks in the requested slot
-            //return new BlockCollection($this->children->where('slot', '=', $key));
             return new SlottedBlockCollection($this->children, $key);
         }
 
@@ -237,6 +235,11 @@ class Block extends Model {
         return $this;
     }
 
+    function getTombstones()
+    {
+        return $this->children->getTombstones();
+    }
+
     function flatten()
     {
         $nodes = [];
@@ -245,7 +248,7 @@ class Block extends Model {
             $nodes[] = $node;
         });
 
-        return new BlockCollection($this, $nodes);
+        return new BlockCollection($this->tree, $this, $nodes);
     }
 
     /**
@@ -319,7 +322,7 @@ class Block extends Model {
     function nextAll()
     {
 	    if (!$this->collection) {
-		    return new BlockCollection($this);
+		    return new BlockCollection($this->tree, $this);
 	    }
 
 	    $index = $this->collection->getIndexOfBlock($this);
@@ -524,32 +527,6 @@ class Block extends Model {
 
         return $this;
     }
-
-    /**
-     * Fields that should be output when converted to an array
-     *
-     * @return array
-     */
-    // function fields()
-    // {
-    //     return [];
-
-    //     // $traitFields = [];
-    //     // $reflect = new \ReflectionClass($this);
-    //     // $traits = $reflect->getTraits();
-    //     // foreach ($traits as $trait) {
-    //     //     $method = lcfirst($trait->getShortName()).'Fields';
-    //     //     if ($reflect->hasMethod($method)) {
-    //     //         $traitFields = array_merge($traitFields, $this->{$method}());
-    //     //     }
-    //     // }
-
-    //     // return array_merge(parent::fields(), [
-    //     //     '__type' => function  () {
-    //     //         return get_class($this);
-    //     //     },
-    //     // ], $traitFields);
-    // }
 
     /**
      * Get the template that should render

@@ -1,0 +1,22 @@
+controls:
+  - attribute: style.fontSize
+    label: Font Size
+    control: text
+    section: Typography
+    tab: Styles
+  - attribute: style.textTransform
+    label: Transform
+    control: dropdown
+    options:
+      "": None
+      uppercase: Uppercase
+    section: Typography
+    tab: Styles
+  - attribute: style.backgroundColor
+    label: Background Color
+    control: colorSwatches
+    swatches:
+      - red
+      - yellow
+      - green
+      - pink

@@ -12,6 +12,13 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
     /** @var Block[] */
     protected $blocks = [];
 
+    /** 
+     * Blocks that have been removed from the collection
+     * 
+     * @var Block[] 
+     */
+    protected $tombstones = [];
+
     /**
      * The iterable index
      * 
@@ -27,13 +34,21 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
     protected $rgt = 0;
 
     /**
+     * The tree id
+     * 
+     * @var string
+     */
+    public $id;
+
+    /**
      * Construct the collection
      * 
      * @param Block $block
      * @param Block[] $blocks
      */
-    function __construct(Block $block=null, array $blocks=[])
+    function __construct(string $id=null, Block $block=null, array $blocks=[])
     {
+        $this->id = $id;
         $this->block = $block;
         $this->blocks = $blocks;
     }
@@ -136,6 +151,11 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
         // Get the new lft of our block
         $lft = $this->getLftAtIndex($index);
 
+        // Make sure we're not trying to delete a block that doesn't exist
+        if ($block === null && !isset($this->blocks[$index])) {
+            throw new \Exception('You can not delete a block whose index does not exist.');
+        }
+
         // Reset the lft/rgt of the block to be inserted and grab the size of the block
         // after insertion. All subsequent blocks will be adjusted by $size to make room
         // for the new block
@@ -147,19 +167,19 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
         else {
             $rgt = $block->setLftRgt($lft);
             $size = $rgt - $lft + 1;
+            
+            // Store metadata from the collection on the block
+            $block->tree = $this->id;
+            $block->collection = $this;
         }
 
         for ($i=$index; $i<count($this->blocks); $i++) {
             $this->blocks[$i]->setLftRgt($this->blocks[$i]->lft + $size);
         }
 
-        // Store the collection this block has been inserted in to
-        if ($block) {
-            $block->collection = $this;
-        }
-
         // Now that all the lft/rgt are set we can insert the block in to the array
         if ($block === null) {
+            $this->tombstones[] = $this->blocks[$index];
             array_splice($this->blocks, $index, 1);
         }
         else {
@@ -196,16 +216,29 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
 
     function getBlocksAfterIndex($index)
     {
-        return new static($this->block, array_slice($this->blocks, $index));
+        return new static($this->id, $this->block, array_slice($this->blocks, $index));
+    }
+
+    function getTombstones()
+    {
+        $childTombstones = collect($this->blocks)
+            ->map(function (Block $block) {
+                return $block->getTombstones();
+            })
+            ->filter()
+            ->flatten(1)
+            ->toArray();
+
+        return array_merge($this->tombstones, $childTombstones);
     }
 
     function walkChildren($callback)
     {
-	foreach ($this->blocks as $block) {
+	    foreach ($this->blocks as $block) {
             $block->walkChildren($callback);
-	}
+	    }
 
-	return $this;
+    	return $this;
     }
 
     /**
@@ -234,6 +267,10 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
 
     function push(...$blocks)
     {
+        foreach ($blocks as $block) {
+            $block->collection = $this;
+        }
+
         $this->blocks = array_merge($this->blocks, $blocks);
 
         return $this;
@@ -267,9 +304,18 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
         return array_map($callback, $this->blocks);
     }
 
+    function forEach(callable $callback)
+    {
+        foreach ($this->blocks as $block) {
+            $callback($block);
+        }
+        
+        return $this;
+    }
+
     function flatten()
     {
-        return new static(null, array_merge(...array_map(function ($block) {
+        return new static($this->id, $this->block, array_merge(...array_map(function ($block) {
             return $block->flatten()->toArray();
         }, $this->blocks)));
     }
@@ -303,9 +349,14 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
 
     function anonymize()
     {
-        return new BlockCollection($this->block, array_map(function ($block) {
+        return new BlockCollection($this->id, $this->block, array_map(function ($block) {
             return $block->anonymize();
         }, $this->blocks));
+    }
+
+    function getInputHtml()
+    {
+        return \Craft::$app->view->renderTemplate('igloo/base/block-collection', ['tree' => $this]);
     }
 
     function count()

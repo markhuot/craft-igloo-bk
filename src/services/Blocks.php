@@ -10,15 +10,20 @@ use markhuot\igloo\base\BlockCollection;
 
 class Blocks {
 
-    function saveTree($tree)
+    function saveTree(BlockCollection $tree)
     {
-        $treeId = $tree[0]->tree ?? uniqid();
+        $tree->forEach(function (Block $block) {
+            $this->saveBlock($block);
+        });
 
-        //$records = $this->getRecordsFromTree(array_map(function ($block) {
-        //    return $block->prepare()->serialize();
-        //}, $tree), 0);
-        $records = $tree->flatten()->serialize();
-        $records = $this->saveRecords($records, $treeId);
+        $tombstoneIds = array_filter(array_map(function (Block $block) {
+            return $block->id;
+        }, $tree->getTombstones()));
+        
+        \Craft::$app->db->createCommand()->delete('{{%igloo_blocks}}', ['id' => $tombstoneIds])->execute();
+        \Craft::$app->db->createCommand()->delete('{{%igloo_block_structure}}', ['id' => $tombstoneIds])->execute();
+
+        return $tree;
     }
 
     function saveBlock(Block $block, $tree=null)
@@ -40,35 +45,6 @@ class Blocks {
         });
         
         return $block;
-    }
-
-    function getRecordsFromBlock(Block $block)
-    {
-        $map = $block->serialize();
-        return $this->getRecordsFromTree([$map], $block->lft ?? 0);
-    }
-
-    function getRecordsFromTree(array $tree, $left)
-    {
-        $records = [];
-
-        foreach ($tree as $node) {
-            $index = count($records);
-            $records[] = $node;
-            //$records[$index][Block::STRUCTURE_TABLE_NAME]['lft'] = $left;
-
-            if (!empty($node['children'])) {
-                $childRecords = $this->getRecordsFromTree($node['children'], $left+1);
-                $records = array_merge($records, $childRecords);
-                //$left += count($childRecords) * 2;
-            }
-
-            //$records[$index][Block::STRUCTURE_TABLE_NAME]['rgt'] = ++$left;
-            unset($records[$index]['children']);
-            //++$left;
-        }
-
-        return $records;
     }
 
     function saveRecords(array $records, $tree)
@@ -184,7 +160,7 @@ class Blocks {
         $records = $this->getTreeContent($blockQuery->all());
 
         if (empty($records)) {
-            return new BlockCollection;
+            return new BlockCollection($tree);
         }
 
         return $this->hydrateRecords($records);
@@ -330,7 +306,7 @@ class Blocks {
 
     function hydrateRecords($records)
     {
-        $collection = new BlockCollection;
+        $collection = new BlockCollection($records[0][Block::STRUCTURE_TABLE_NAME]['tree'] ?? null);
 
         $record = array_shift($records);
         $block = $this->hydrate($record);
@@ -349,7 +325,6 @@ class Blocks {
             if ((int)$next[Block::STRUCTURE_TABLE_NAME]['lft'] === (int)$record[Block::STRUCTURE_TABLE_NAME]['rgt'] + 1) {
                 $block = $this->hydrate($next);
                 $record = $next;
-                // $collection->append($block);
                 $collection->push($block);
             }
         }

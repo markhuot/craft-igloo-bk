@@ -1,0 +1,5 @@
+<div class="igloo-space-y-4" data-tree-id="{{ tree.id }}">
+    {% for block in tree %}
+        {{ block.getInputHtml()|raw }}
+    {% endfor %}
+</div>

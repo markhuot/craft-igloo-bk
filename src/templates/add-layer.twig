@@ -1,8 +1,8 @@
-<div class="fixed bottom-0 left-0 w-screen z-50 bg-white rounded-lg p-4" style="box-shadow: 0 0 20px rgba(0,0,0,0.2);" x-data="{}">
+<div class="fixed bottom-0 left-0 w-screen z-50 bg-white rounded-t-lg p-4" style="box-shadow: 0 0 20px rgba(0,0,0,0.2);" x-data="{}">
     {% include 'igloo/components/back' %}
     <p class="py-4"><strong class="inline-block text-2xl">Add Layer</strong></p>
     {% for block in blocks %}
-        <form action="{{ cpUrl("igloo/tree/#{tree}/store-new-layer") }}" method="post">
+        <form action="{{ cpUrl("igloo/tree/#{tree}/store-new-layer") }}" method="post" x-data="{...AddLayerController()}" x-on:submit="handleFormSubmit">
             {{ csrfInput() }}
             <input type="text" name="block[type]" value="{{ block.getType() }}">
             <button class="text-blue-500">

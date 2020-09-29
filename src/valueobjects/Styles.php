@@ -12,6 +12,7 @@ class Styles extends BaseObject {
     public $color = null;
     public $fontSize = null;
     public $weight = null;
+    public $textTransform = null;
 
     function __construct($config = [])
     {
@@ -35,7 +36,10 @@ class Styles extends BaseObject {
         }
 
         foreach ($values as $key => $value) {
-            $this->{$key} = $value;
+            // @todo warning when setting a value that doesn't exist
+            if (property_exists($this, $key)) {
+                $this->{$key} = $value;
+            }
         }
 
         return $this;

@@ -8,10 +8,7 @@
     window.csrfTokenName = "{{ craft.app.config.general.csrfTokenName|e('js') }}"
     window.csrfTokenValue = "{{ craft.app.request.csrfToken|e('js') }}"
 </script>
-<div data-igloo-element-id="{{ element.id }}" class="igloo-space-y-4">
-    {% for block in blocks %}
-        {{ block.getInputHtml()|raw }}
-    {% endfor %}
-
+<div data-igloo-element-id="{{ element.id }}">
+    {{ blocks.getInputHtml()|raw }}
     {% include 'igloo/components/layers' with {blocks: blocks, tree: tree} only %}
 </div>

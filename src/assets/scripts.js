@@ -31,6 +31,14 @@ function LayerController() { return {
     }
 }}
 
+function AddLayerController() { return {
+    handleFormSubmit(event) {
+        event.preventDefault()
+        const action = 
+        fetch(`${window.iglooCpUrl}/`)
+    }
+}}
+
 function TextBlockController() { return {
     handleChange(event) {
         const clone = this.$el.cloneNode(true)

@@ -28,7 +28,7 @@ class TreeController extends Controller {
 
         return $this->asJson([
             'components' => [
-                '' => '',
+                '[data-tree-id="'.$tree->id.'"]' => $tree->getInputHtml(),
             ],
             'action' => 'closePanel',
         ]);

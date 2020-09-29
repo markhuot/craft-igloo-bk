@@ -303,16 +303,44 @@ it('inserts a deeply nested block', function () {
     expect($secondGrandParent->lft)->toBe(12);
 });
 
-it('deletes a block', function () {
+it('deletes a block from memory', function () {
     $tree = new \markhuot\igloo\base\BlockCollection;
     $tree->append($one = new \markhuot\igloo\models\Text('one'));
     $tree->append($two = new \markhuot\igloo\models\Text('two'));
-    $tree->append($three = new \markhuot\igloo\models\Text('threr'));
+    $tree->append($three = new \markhuot\igloo\models\Text('three'));
     $tree->deleteAtIndex(1);
-
+    
     expect($three->lft)->toBe(2);
     expect($three->rgt)->toBe(3);
-})->only();
+});
+
+it('stores tombstones on deletion', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append(new \markhuot\igloo\models\Text('parent one'));
+    $tree->append($box = new \markhuot\igloo\models\Box());
+    $tree->append(new \markhuot\igloo\models\Text('parent three'));
+
+    $box->children->append(new \markhuot\igloo\models\Text('child one'));
+    $box->children->append($childTwo = new \markhuot\igloo\models\Text('child two - delete me'));
+    $box->children->deleteAtIndex(1);
+
+    expect($tree->getTombstones())->toBe([$childTwo]);
+});
+
+it('deletes a block from the database', function () {
+    $treeId = uniqid();
+    $tree = new \markhuot\igloo\base\BlockCollection($treeId);
+    $tree->append($one = new \markhuot\igloo\models\Text('one'));
+    $tree->append($two = new \markhuot\igloo\models\Text('two'));
+    $tree->append($three = new \markhuot\igloo\models\Text('three'));
+    (new \markhuot\igloo\services\Blocks)->saveTree($tree);
+    
+    $tree->deleteAtIndex(1);
+    (new \markhuot\igloo\services\Blocks)->saveTree($tree);
+
+    $fetchedTree = (new \markhuot\igloo\services\Blocks)->getTree($treeId);
+    expect($fetchedTree->count())->toBe(2);
+});
 
 it('finds block index in collection', function () {
     $tree = new \markhuot\igloo\base\BlockCollection;
