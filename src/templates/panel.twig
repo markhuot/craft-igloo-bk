@@ -1,0 +1,3 @@
+<div {{ panelDataAttr|default('')|raw }} class="box-border fixed z-50 bottom-0 right-0 w-screen max-h-3/4-screen overflow-auto md:w-1/4 md:max-h-screen md:h-full md:rounded-tr-none md:rounded-l-lg bg-white rounded-t-lg transition duration-300 transform" style="box-shadow: 0 0 20px rgba(0,0,0,0.2)" data-panel>
+    {% block body %}{% endblock %}
+</div>

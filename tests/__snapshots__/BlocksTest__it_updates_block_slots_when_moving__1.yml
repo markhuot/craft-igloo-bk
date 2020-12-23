@@ -1,0 +1,19 @@
+-
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
+    '{{%igloo_block_structure}}': { slot: null, lft: 0, rgt: 1 }
+    '{{%igloo_block_attributes}}': {  }
+    '{{%igloo_content_text}}': { content: three }
+-
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Blockquote }
+    '{{%igloo_block_structure}}': { slot: null, lft: 2, rgt: 7 }
+    '{{%igloo_block_attributes}}': {  }
+-
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
+    '{{%igloo_block_structure}}': { slot: content, lft: 3, rgt: 4 }
+    '{{%igloo_block_attributes}}': {  }
+    '{{%igloo_content_text}}': { content: one }
+-
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
+    '{{%igloo_block_structure}}': { slot: author, lft: 5, rgt: 6 }
+    '{{%igloo_block_attributes}}': {  }
+    '{{%igloo_content_text}}': { content: two }

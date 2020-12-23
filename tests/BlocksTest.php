@@ -39,6 +39,16 @@ it('prepares block children for save', function () {
     assertMatchesSnapshot($box->flatten()->serialize());
 });
 
+it('supports default children', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append(new \markhuot\igloo\models\Text);
+    $tree->append(new \markhuot\igloo\models\Blockquote);
+    $tree->append(new \markhuot\igloo\models\Text);
+    $records = $tree->flatten()->serialize();
+    $tree2 = (new \markhuot\igloo\services\Blocks)->hydrateRecords($records);
+    expect($records)->toBe($tree2->flatten()->serialize());
+});
+
 it('flattens tree', function () {
     $box = new \markhuot\igloo\models\Box();
     $box->append(new \markhuot\igloo\models\Text('foo'));
@@ -48,8 +58,8 @@ it('flattens tree', function () {
 
 it('flattens a tree with named children', function () {
     $blockquote = new \markhuot\igloo\models\Blockquote();
-    $blockquote->content->append(new \markhuot\igloo\models\Text('foo'));
-    $blockquote->author->append(new \markhuot\igloo\models\Text('bar'));
+    $blockquote->content[0] = new \markhuot\igloo\models\Text('foo');
+    $blockquote->author[0] = new \markhuot\igloo\models\Text('bar');
     $records = $blockquote->flatten()->serialize();
     assertMatchesSnapshot($records);
 });
@@ -117,10 +127,25 @@ it('hydrates record children', function () {
     $box->append(new \markhuot\igloo\models\Text);
     $box->append($blockquote);
     $box->append(new \markhuot\igloo\models\Text);
-    //dump($box->flatten()->serialize());
+    // dump($box->flatten()->serialize());
     $block = (new \markhuot\igloo\services\Blocks())->hydrateRecords($box->flatten()->serialize());
-    //dump($block->flatten()->serialize());
+    // dump($block->flatten()->serialize());
     expect($box->flatten()->serialize())->toEqual($block->flatten()->serialize());
+});
+
+it('hydrates slotted block collections', function () {
+    $blockquote = new \markhuot\igloo\models\Blockquote;
+    $records = $blockquote->flatten()->serialize();
+    expect($records[0]['{{%igloo_block_structure}}']['slot'])->toBe(null);
+    expect($records[1]['{{%igloo_block_structure}}']['slot'])->toBe('content');
+    expect($records[2]['{{%igloo_block_structure}}']['slot'])->toBe('author');
+
+    $tree = (new \markhuot\igloo\services\Blocks)->hydrateRecords($records);
+    //dd($tree->flatten()->serialize());
+    expect($tree->flatten()->serialize())->toBe($records);
+
+    //dd(get_class($tree->getAtPath('0.author.0')->collection));
+    expect(get_class($tree->getAtPath('0.author.0')->collection))->toBe(\markhuot\igloo\base\SlottedBlockCollection::class);
 });
 
 it('saves a single record', function () {
@@ -314,6 +339,23 @@ it('deletes a block from memory', function () {
     expect($three->rgt)->toBe(3);
 });
 
+it('deletes a block with children from memory', function () {
+    $grandparent = new \markhuot\igloo\models\Box;
+    $grandparent->append($parent = new \markhuot\igloo\models\Box);
+    
+    $parent->append(new \markhuot\igloo\models\Text);
+    $parent->append((new \markhuot\igloo\models\Blockquote)
+        ->content->append(new \markhuot\igloo\models\Text)->block
+        ->author->append(new \markhuot\igloo\models\Text)->block);
+    $parent->append(new \markhuot\igloo\models\Text);
+
+    $grandparent->append(new \markhuot\igloo\models\Box);
+
+    $parent->children->deleteAtIndex(1);
+
+    assertMatchesSnapshot($grandparent->anonymize()->flatten()->serialize());
+});
+
 it('stores tombstones on deletion', function () {
     $tree = new \markhuot\igloo\base\BlockCollection;
     $tree->append(new \markhuot\igloo\models\Text('parent one'));
@@ -321,10 +363,10 @@ it('stores tombstones on deletion', function () {
     $tree->append(new \markhuot\igloo\models\Text('parent three'));
 
     $box->children->append(new \markhuot\igloo\models\Text('child one'));
-    $box->children->append($childTwo = new \markhuot\igloo\models\Text('child two - delete me'));
+    $box->children->append($childTwo = new \markhuot\igloo\models\Text('child two - delete me', ['id' => 123]));
     $box->children->deleteAtIndex(1);
 
-    expect($tree->getTombstones())->toBe([$childTwo]);
+    expect($tree->getTombstonesFromTree())->toBe([$childTwo]);
 });
 
 it('deletes a block from the database', function () {
@@ -337,9 +379,62 @@ it('deletes a block from the database', function () {
     
     $tree->deleteAtIndex(1);
     (new \markhuot\igloo\services\Blocks)->saveTree($tree);
-
+    
     $fetchedTree = (new \markhuot\igloo\services\Blocks)->getTree($treeId);
     expect($fetchedTree->count())->toBe(2);
+});
+
+it('doesn\'t store tombstones for unsaved blocks', function () {
+    $treeId = uniqid();
+    $tree = new \markhuot\igloo\base\BlockCollection($treeId);
+    $tree->append($one = new \markhuot\igloo\models\Text('one'));
+    $tree->append($two = new \markhuot\igloo\models\Text('two'));
+    $tree->append($three = new \markhuot\igloo\models\Text('three'));
+
+    $tree->deleteAtIndex(1);
+    expect(count($tree->getTombstones()))->toBe(0);
+});
+
+it('clears tombstones during move', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection();
+    $tree->append($one = new \markhuot\igloo\models\Text('one', ['id' => 1]));
+    $tree->append($two = new \markhuot\igloo\models\Text('two', ['id' => 2]));
+    $tree->append($three = new \markhuot\igloo\models\Text('three', ['id' => 3]));
+    // (new \markhuot\igloo\services\Blocks)->saveTree($tree);
+    
+    $tree->deleteAtIndex(1);
+    expect(count($tree->getTombstonesFromTree()))->toBe(1);
+
+    $tree->insertAtIndex($two, 1);
+    expect(count($tree->getTombstonesFromTree()))->toBe(0);
+});
+
+it('gets the root from a block', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection();
+    $tree->append($grandparent = new \markhuot\igloo\models\Box);
+    $grandparent->append($parent = new \markhuot\igloo\models\Box);
+    $parent->append($child = new \markhuot\igloo\models\Box);
+    $child->append($grandchild = new \markhuot\igloo\models\Box);
+
+    expect($grandchild->getRoot())->toBe($tree);
+});
+
+it('clears tombstones during deep move', function () {
+    $treeId = uniqid();
+    $tree = new \markhuot\igloo\base\BlockCollection($treeId);
+    $tree->append(new \markhuot\igloo\models\Text('one'));
+    $tree->append($box1 = new \markhuot\igloo\models\Box);
+    $tree->append($box2 = new \markhuot\igloo\models\Box);
+    $tree->append(new \markhuot\igloo\models\Text('three'));
+
+    $box1->append($text = new \markhuot\igloo\models\Text('two'));
+    (new \markhuot\igloo\services\Blocks)->saveTree($tree);
+    
+    $box1->children->deleteAtIndex(0);
+    expect(count($tree->getTombstonesFromTree()))->toBe(1);
+    
+    $box2->children->append($text);
+    expect(count($tree->getTombstonesFromTree()))->toBe(0);
 });
 
 it('finds block index in collection', function () {
@@ -353,10 +448,10 @@ it('finds block index in collection', function () {
 
 it('allows block (and slotted block) collection array access and iterator', function () {
     $blockquote = new \markhuot\igloo\models\Blockquote;
-    $blockquote->content->append($content = new \markhuot\igloo\models\Text('content'));
-    $blockquote->author->append($author = new \markhuot\igloo\models\Text('author'));
+    $blockquote->content[0] = ($content = new \markhuot\igloo\models\Text('content'));
+    $blockquote->author[0] = ($author = new \markhuot\igloo\models\Text('author'));
 
-    expect(count($blockquote->content))->toBe(1);
+    expect($blockquote->content->count())->toBe(1);
     expect($blockquote->content[0])->toBe($content);
     foreach ($blockquote->content as $child) {
         expect($child)->toBe($content);
@@ -364,4 +459,106 @@ it('allows block (and slotted block) collection array access and iterator', func
 
     expect(count($blockquote->children))->toBe(2);
     expect($blockquote->children[1])->toBe($author);
+});
+
+it('parses a path', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append(new \markhuot\igloo\models\Text('one'));
+    $tree->append($parent = new \markhuot\igloo\models\Box);
+    $parent->children->append($child = new \markhuot\igloo\models\Box);
+
+    $result = $tree->getAtPath('1.children.0');
+    expect($result)->toBe($child);
+
+    $result = $tree->getAtPath('1.children');
+    expect($result)->toBe($parent->getSlot('children'));
+});
+
+it('parses a slotted path', function () {
+    $blockquote = new \markhuot\igloo\models\Blockquote;
+    $blockquote->content[0] = new \markhuot\igloo\models\Text('one');
+    $blockquote->author[0] = new \markhuot\igloo\models\Text('two');
+    $blockquote->content[1] = new \markhuot\igloo\models\Text('three');
+    
+    assertMatchesSnapshot($blockquote->flatten()->map(function ($b) { return $b->getPath(); }));
+});
+
+it('moves a block', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append(new \markhuot\igloo\models\Text('one'));
+    $tree->append(new \markhuot\igloo\models\Text('two'));
+    $tree->append(new \markhuot\igloo\models\Text('three'));
+    $tree->moveBlock('0', '3');
+    
+    expect($tree[0]->content)->toBe('two');
+    expect($tree[1]->content)->toBe('three');
+    expect($tree[2]->content)->toBe('one');
+    assertMatchesSnapshot($tree->flatten()->serialize());
+});
+
+it('moves a block deeper in to a tree', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append(new \markhuot\igloo\models\Text('one'));
+    $tree->append($parent = new \markhuot\igloo\models\Box);
+    $parent->children->append($child = new \markhuot\igloo\models\Box);
+    $tree->moveBlock('0', '1.children.0.children.0');
+    
+    expect($tree->count())->toBe(1);
+    expect($child->children->count())->toBe(1);
+    assertMatchesSnapshot($tree->flatten()->serialize());
+});
+
+it('updates block slots when moving', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append($blockquote = new \markhuot\igloo\models\Blockquote);
+    $blockquote->content[0] = new \markhuot\igloo\models\Text('one');
+    $blockquote->author[0] = new \markhuot\igloo\models\Text('two');
+    $blockquote->content[1] = new \markhuot\igloo\models\Text('three');
+
+    $tree->moveBlock('0.content.1', '0');
+    
+    assertMatchesSnapshot($tree->flatten()->serialize());
+});
+
+it('moves a block within a nested slot', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append($blockquote = new \markhuot\igloo\models\Blockquote);
+    $blockquote->content[0] = new \markhuot\igloo\models\Text('one');
+    $blockquote->author[0] = new \markhuot\igloo\models\Text('two');
+    $blockquote->content[1] = new \markhuot\igloo\models\Text('three');
+    
+    $tree->moveBlock('0.content.1', '0.content.0');
+    
+    assertMatchesSnapshot($tree->flatten()->serialize());
+});
+
+it('creates the correct path for null slots', function () {
+    $tree = new \markhuot\igloo\base\BlockCollection;
+    $tree->append($box = new \markhuot\igloo\models\Box);
+    $box->append($text = new \markhuot\igloo\models\Text('foo'));
+
+    expect($text->getPath())->toBe('0.children.0');
+});
+
+it('deletes nested blocks', function () {
+    $treeId = uniqid();
+    $tree = new \markhuot\igloo\base\BlockCollection($treeId);
+    $tree->append($box = new \markhuot\igloo\models\Box);
+    $box->append($blockquote = new \markhuot\igloo\models\Blockquote);
+    $tree->append($text = new \markhuot\igloo\models\Text('postscript'));
+
+    (new \markhuot\igloo\services\Blocks)->saveTree($tree);
+
+    $tree->getAtPath('0.children.0.content')->deleteAtIndex(0);
+    expect(count($tree->getTombstonesFromTree()))->toBe(1);
+
+    // Ensures that the ->saveTree() call _actually_ removes the deeply nested element from
+    // the database. Previously `->saveTree` was calling `->getTombstones()` which meant it
+    // only removed tombstones that were deleted from the top of the tree. It has been fixed
+    // to call `getTombstonesFromTree` such that it deletes tombstones from anywhere in
+    // the tree
+    (new \markhuot\igloo\services\Blocks)->saveTree($tree);
+
+    $newTree = (new \markhuot\igloo\services\Blocks)->getTree($tree);
+    assertMatchesSnapshot($newTree->anonymize()->flatten()->serialize());
 });

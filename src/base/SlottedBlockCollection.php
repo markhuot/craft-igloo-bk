@@ -24,6 +24,15 @@ class SlottedBlockCollection implements \Iterator, \ArrayAccess, \Countable {
         $this->slot = $slot;
     }
 
+    function __get($key)
+    {
+        if (in_array($key, ['block'])) {
+            return $this->collection->{$key};
+        }
+
+        // @todo add exception for non-existent property access
+    }
+
     function append($block)
     {
         $block->slot = $this->slot;
@@ -31,14 +40,72 @@ class SlottedBlockCollection implements \Iterator, \ArrayAccess, \Countable {
         return $this;
     }
 
+    function appendRaw(...$blocks)
+    {
+        foreach ($blocks as $block) {
+            $block->tree = $this->id;
+            $block->collection = $this;
+            $block->slot = $this->slot;
+        }
+
+        $this->collection->appendRaw(...$blocks);
+
+        return $this;
+    }
+
+    function insertAtIndex(Block $block, $index)
+    {
+        $blocks = $this->_fetch();
+        $indexes = array_keys($blocks);
+        $block->slot = $this->slot;
+        
+        if (isset($indexes[$index])) {
+            $actualIndex = $indexes[$index];
+            $this->collection->insertAtIndex($block, $actualIndex);
+        }
+        else if ($index === count($blocks)) {
+            $this->collection->append($block);
+        }
+        else {
+            throw \Exception("Could not insert a block at index {$index}.");
+        }
+        
+        return $this;
+    }
+
+    function getIndexOfBlock(Block $block)
+    {
+        // _fetch gives back raw indexes, we want normalized index
+        $blocks = array_values($this->_fetch());
+
+        foreach ($blocks as $index => $b) {
+            if ($block === $b) {
+                return $index;
+            }
+        }
+
+        return false;
+    }
+
+    function getAtIndex($index)
+    {
+        return $this->offsetGet($index);
+    }
+
+    function deleteAtIndex($index)
+    {
+        $this->offsetUnset($index);
+        return $this;
+    }
+
     private function _fetch()
     {
         $blocks = [];
 
-        foreach ($this->collection as $block)
+        foreach ($this->collection as $index => $block)
         {
             if ($block->slot === $this->slot) {
-                $blocks[] = $block;
+                $blocks[$index] = $block;
             }
         }
 
@@ -53,7 +120,11 @@ class SlottedBlockCollection implements \Iterator, \ArrayAccess, \Countable {
 
     function current()
     {
-        $blocks = $this->_fetch();
+        // because _fetch returns the actual collection indexes not 0-based slot indexes
+        // we have to re-normalize the indexes to 0-based for proper iteration. The reason
+        // _fetch returns non-0-based indexes is so ArrayAccess can set/unset on the
+        // base collection properly. See offsetSet for related code.
+        $blocks = array_values($this->_fetch());
         return $blocks[$this->index];
     }
     
@@ -61,7 +132,7 @@ class SlottedBlockCollection implements \Iterator, \ArrayAccess, \Countable {
     {
         return $this->index;
     }
-
+    
     function next()
     {
         ++$this->index;
@@ -74,37 +145,55 @@ class SlottedBlockCollection implements \Iterator, \ArrayAccess, \Countable {
     
     function valid()
     {
-        $blocks = $this->_fetch();
+        // because _fetch returns the actual collection indexes not 0-based slot indexes
+        // we have to re-normalize the indexes to 0-based for proper iteration. The reason
+        // _fetch returns non-0-based indexes is so ArrayAccess can set/unset on the
+        // base collection properly. See offsetSet for related code.
+        $blocks = array_values($this->_fetch());
         return isset($blocks[$this->index]);
     }
 
     function offsetSet($offset, $value)
     {
         $blocks = $this->_fetch();
+        $indexes = array_keys($blocks);
+        $value->slot = $this->slot;
         
         if (is_null($offset)) {
-            $blocks[] = $value;
+            $this->collection->append($value);
+        }
+        else if (isset($indexes[$offset])) {
+            $actualIndex = $indexes[$offset];
+            
+            // Since this is a native PHP set we are technically overwriting what's in the
+            // specified offset. E.g., if you call `$array[3] = "foo"` you're replacing
+            // index 3 with "foo". In terms of blocks that means we need to remove anything that's
+            // already there and replace it with our new block.
+            $this->collection->insertAtIndex(null, $actualIndex);
+            $this->collection->insertAtIndex($value, $actualIndex);
         }
         else {
-            $blocks[$offset] = $value;
+            $this->collection->append($value);
         }
     }
     
     function offsetExists($offset)
     {
-        $blocks = $this->_fetch();
+        $blocks = array_values($this->_fetch());
         return isset($blocks[$offset]);
     }
     
     function offsetUnset($offset)
     {
         $blocks = $this->_fetch();
-        unset($blocks[$offset]);
+        $indexes = array_keys($blocks);
+        $actualIndex = $indexes[$offset];
+        $this->collection->insertAtIndex(null, $actualIndex);
     }
     
     function offsetGet($offset)
     {
-        $blocks = $this->_fetch();
+        $blocks = array_values($this->_fetch());
         return isset($blocks[$offset]) ? $blocks[$offset] : null;
     }
 

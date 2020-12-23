@@ -1,5 +1,26 @@
+/*
 @tailwind base;
 
 @tailwind components;
 
 @tailwind utilities;
+*/
+
+*:checked ~ .sibling-checked\:block {
+    display: block !important;
+}
+
+*:checked ~ .group .group-sibling-checked\:rotate-90 {
+    --transform-rotate: 90deg;
+}
+
+*:checked ~ .sibling-checked\:text-blue-500 {
+    color: blue;
+}
+
+.max-h-3\/4-screen { max-height: 75vh; }
+
+.left-1\/2 { left: 50%; }
+.top-1\/2 { top: 50%; }
+
+.box-border-children * { box-sizing: border-box; }

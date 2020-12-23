@@ -32,8 +32,10 @@ class Igloo extends Plugin {
                 $event->rules['DELETE igloo/blocks/<id:\d+>'] = 'igloo/block/delete';
                 $event->rules['GET igloo/blocks/<id:\d+>/styles'] = 'igloo/block/styles';
                 $event->rules['POST igloo/blocks/<id:\d+>/styles'] = 'igloo/block/store';
+                $event->rules['GET igloo/blocks/<id:\d+>/actions'] = 'igloo/block/actions';
                 $event->rules['GET igloo/tree/<tree:.+>/add-layer'] = 'igloo/tree/add-layer';
                 $event->rules['POST igloo/tree/<tree:.+>/store-new-layer'] = 'igloo/tree/store-new-layer';
+                $event->rules['POST igloo/tree/<tree:.+>/move/<blockId:\d+>'] = 'igloo/tree/move-layer';
             }
         );
     }

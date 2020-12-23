@@ -7,12 +7,32 @@ use yii\base\BaseObject;
 
 class Styles extends BaseObject {
 
-    public $borderLeft = null;
-    public $paddingLeft = null;
-    public $color = null;
-    public $fontSize = null;
-    public $weight = null;
-    public $textTransform = null;
+    public $backgroundAttachment;
+    public $backgroundColor;
+    public $backgroundImage;
+    public $backgroundPosition;
+    public $backgroundRepeat;
+    public $backgroundSize;
+    public $border;
+    public $borderLeft;
+    public $borderRadius;
+    public $color;
+    public $display;
+    public $fontSize;
+    public $height;
+    public $justifyContent;
+    public $marginBottom;
+    public $marginLeft;
+    public $marginRight;
+    public $marginTop;
+    public $paddingBottom;
+    public $paddingLeft;
+    public $paddingRight;
+    public $paddingTop;
+    public $textAlign;
+    public $textTransform;
+    public $weight;
+    public $width;
 
     function __construct($config = [])
     {

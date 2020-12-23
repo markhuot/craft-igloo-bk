@@ -1,27 +1,33 @@
 {% macro tree(blocks, level=0) %}
-    <ul class="">
+    <ul>
         {% for block in blocks %}
-            <li class="" style="">
-                <div class="flex border-t border-solid border-gray-200 py-1 px-4" x-data="{...LayerController(), blockId: {{block.id}}}" data-block-layer data-block-id="{{block.id}}" style="padding-left: calc(1rem + {{ level * 2 }}rem);">
-                    <div>{{ block.getIcon()|raw }}</div>
-                    <div class="flex-grow truncate">{{ block.getLabel() }}</div>
-                    <a class="text-blue-500 inline-block p-2" href="#" x-on:click="handleStylesClick">
-                        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-pencil-square" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456l-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
-                            <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/>
-                        </svg>
-                    </a>
-                </div>
-                <div class="">
-                    {{ _self.tree(block.getChildren(), level+1) }}
+            <li draggable="true" x-data="{...LayerDragController()}" data-tree="{{ block.tree }}" data-block-id="{{ block.id }}" data-block-path="{{ block.getPath() }}" x-on:dragstart="handleDragStart" x-on:dragover="handleDragOver" x-on:drop="handleDrop">
+                {% include "igloo/components/layer" with {block: block} only %}
+                <div class="hidden sibling-checked:block">
+                    {% for slot in block.getSlotNames() %}
+                        {% if slot != 'children' %}
+                            <p class="uppercase text-xs text-hairline text-gray-600 border-t border-solid border-gray-200" style="padding-left: calc(1.5rem + {{ (block.depth|default(0) + 1) * 2 }}rem)">{{ slot }}</p>
+                        {% endif %}
+                        {% if block.hasSlots() %}
+                            <ul>
+                                {% if block[slot].count() %}
+                                    {{ _self.tree(block[slot], level + 1) }}
+                                {% else %}
+                                    <li x-data="{...LayerDragController()}" data-tree="{{ block.tree }}" data-block-is-empty-placeholder="true" data-block-path="{{ block.getPath() }}.{{ slot }}.0" x-on:dragover="handleDragOver" x-on:drop="handleDrop" class="text-gray-600 border-t border-solid border-gray-200" style="padding-left: calc(1.5rem + {{ (block.depth|default(0) + 1) * 2 }}rem)">
+                                        <div class="py-2 text-xs">Empty {{ block.getTypeLabel() }}</div>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        {% endif %}
+                    {% endfor %}
                 </div>
             </li>
         {% endfor %}
     </ul>
 {% endmacro %}
 
-<div class="fixed left-0 bottom-0 w-screen z-50 bg-white rounded-t-lg pt-10" style="box-shadow: 0 0 20px rgba(0,0,0,0.2);" x-data="{...LayersController(), tree: '{{ tree }}'}">
-    <p class="p-4 text-2xl flex justify-between">
+<div data-layers class="pt-10" x-data="{...LayersController(), treeId: '{{ tree.id }}'}">
+    <p class="px-6 py-4 text-2xl flex justify-between">
         <strong>Layers</strong>
         <a class="text-blue-500" href="#" x-on:click="handleAddClick">
             <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-plus-circle-fill" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -29,5 +35,5 @@
             </svg>
         </a>
     </p>
-    {{ _self.tree(blocks) }}
+    {{ _self.tree(tree) }}
 </div>

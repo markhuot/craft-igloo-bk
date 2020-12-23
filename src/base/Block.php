@@ -50,6 +50,12 @@ class Block extends Model {
     public $rgt = 1;
 
     /**
+     * The depth of the block. This is not an authorative depth, it is computed
+     * based on the blocks being unserialized.
+     */
+    //public $depth = 0;
+
+    /**
      * The slots this block exposes to be filled with other blocks
      * 
      * @var string[]
@@ -106,13 +112,19 @@ class Block extends Model {
      */
     function __get($key)
     {
-        if (in_array($key, $this->getSlotNames())) {
-            return new SlottedBlockCollection($this->children, $key);
+        if ($this->hasSlot($key)) {
+            return $this->getSlot($key);
         }
 
         return parent::__get($key);
     }
 
+    /**
+     * Check for magic slot names
+     * 
+     * @param string $key
+     * @return mixed
+     */
     function __isset($key)
     {
         if (\in_array($key, $this->getSlotNames())) {
@@ -129,10 +141,10 @@ class Block extends Model {
      */
     function getIcon()
     {
-        return '📦';
-        //return '<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-box-seam" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        //    <path fill-rule="evenodd" d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
-        //</svg>';
+        //return '📦';
+        return '<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-box-seam" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+           <path fill-rule="evenodd" d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+        </svg>';
     }
 
     /**
@@ -183,11 +195,40 @@ class Block extends Model {
      * child blocks. E.g., a Box contains a flat array of children while a
      * Blockquote may contain fixed "content" and "author" child blocks.
      *
+     * @deprecated
      * @return \markhuot\igloo\base\BlockCollection
      */
     function getChildren()
     {
         return $this->children;
+    }
+
+    function getDepth()
+    {
+        $depth = 0;
+
+        // Because walkParents always include the current block depth will always be one
+        // or greater. So we'll account for that and subtract one after the fact
+        $this->walkParents(function () use (&$depth) {
+            $depth += 1;
+        });
+
+        return $depth - 1;
+    }
+
+    function getPath()
+    {
+        $path = [];
+
+        $this->walkParents(function ($block) use (&$path) {
+            $path[] = $block->getIndex();
+
+            if ($block->getDepth() > 0) {
+                $path[] = $block->slot ?? 'children';
+            }
+        });
+
+        return implode('.', array_reverse($path));
     }
 
     /**
@@ -219,6 +260,16 @@ class Block extends Model {
     }
 
     /**
+     * Get the parent of a this block, if it has one
+     * 
+     * @return Block
+     */
+    function getParent()
+    {
+        return $this->collection->block ?? null;
+    }
+
+    /**
      * Walk over the parents moving up the tree
      *
      * @param callable $callback
@@ -230,6 +281,20 @@ class Block extends Model {
         while ($pointer) {
             $callback($pointer);
             $pointer = $pointer->collection->block ?? null;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Walking up the tree get the highest collection or block, the root
+     * 
+     * @return BlockCollection
+     */
+    function getRoot()
+    {
+        if (!empty($this->collection)) {
+            return $this->collection->getRoot();
         }
 
         return $this;
@@ -272,6 +337,29 @@ class Block extends Model {
         return $slots;
     }
 
+    function hasSlot($name)
+    {
+        return in_array($name, $this->getSlotNames());
+    }
+
+    function hasSlots()
+    {
+        return count($this->getSlotNames()) > 0;
+    }
+
+    function getSlot($name='children')
+    {
+        if ($name === 'children') {
+            return $this->children;
+        }
+
+        if ($this->hasSlot($name)) {
+            return new SlottedBlockCollection($this->children, $name);
+        }
+
+        throw new \Exception("The slot `{$name}` does not exist.");
+    }
+
     /**
      * Get the slot configuration
      * 
@@ -280,6 +368,8 @@ class Block extends Model {
     function getSlotInfo($name)
     {
         $defaultInfo = [
+            'name' => $name,
+            'handle' => $name,
             'limit' => null,
         ];
 
@@ -309,25 +399,41 @@ class Block extends Model {
         }, $this->lft + 1);
     }
 
-    function next()
+    function getIndex()
     {
-	    if (!$this->collection) {
-		    return false;
-	    }
+        if ($this->slot && !empty($this->collection->block)) {
+            $sbc = $this->collection->block->{$this->slot};
+            return $sbc->getIndexOfBlock($this);
+        }
 
-	    $index = $this->collection->getIndexOfBlock($this);
-	    return $this->collection->getBlocksAfterIndex($index + 1)->first();
+        // @TODO when used inside a slottedblockcollection this is incorrect
+        // @TODO $block->author[2] !== $block->collection->getAtIndex(2)
+        if ($this->collection) {
+            return $this->collection->getIndexOfBlock($this);
+        }
+
+        return 0;
     }
 
-    function nextAll()
-    {
-	    if (!$this->collection) {
-		    return new BlockCollection($this->tree, $this);
-	    }
+    // function next()
+    // {
+	//     if (!$this->collection) {
+	// 	    return null;
+	//     }
+    //
+	//     $index = $this->getIndex();
+	//     return $this->collection->getBlocksAfterIndex($index + 1)->first();
+    // }
 
-	    $index = $this->collection->getIndexOfBlock($this);
-	    return $this->collection->getBlocksAfterIndex($index + 1);
-    }
+    // function nextAll()
+    // {
+	//     if (!$this->collection) {
+	// 	    return new BlockCollection($this->tree, $this);
+	//     }
+    
+	//     $index = $this->getIndex();
+	//     return $this->collection->getBlocksAfterIndex($index + 1);
+    // }
 
     /**
      * Prepare a block for saving to the persistent storage by assigning a UUID. The UUID
@@ -387,9 +493,11 @@ class Block extends Model {
             static::TABLE_NAME => array_merge($meta, [
                 'type' => $this->getType(),
             ]),
-            static::STRUCTURE_TABLE_NAME => array_merge($meta, array_filter([
-                'tree' => $this->tree,
+
+            static::STRUCTURE_TABLE_NAME => array_merge($meta, [
                 'slot' => $this->slot,
+            ], array_filter([
+                'tree' => $this->tree,
                 'lft' => $this->lft,
                 'rgt' => $this->rgt,
             ], function ($value) {
@@ -498,9 +606,13 @@ class Block extends Model {
         $this->id = $config[static::TABLE_NAME]['id'] ?? null;
         $this->uid = $config[static::TABLE_NAME]['uid'] ?? null;
         $this->tree = $config[static::STRUCTURE_TABLE_NAME]['tree'] ?? null;
+        $this->children->id = $config[static::STRUCTURE_TABLE_NAME]['tree'] ?? null;
         $this->slot = $config[static::STRUCTURE_TABLE_NAME]['slot'] ?? null;
         $this->lft = isset($config[static::STRUCTURE_TABLE_NAME]['lft']) ? (int)$config[static::STRUCTURE_TABLE_NAME]['lft'] : null;
         $this->rgt = isset($config[static::STRUCTURE_TABLE_NAME]['rgt']) ? (int)$config[static::STRUCTURE_TABLE_NAME]['rgt'] : null;
+
+        // Empty out any default children because the unserialization process will fill the children with proper blocks
+        $this->children->emptyRaw();
 
         $this->callTraits('unserialize', $config);
 

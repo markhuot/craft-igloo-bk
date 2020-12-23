@@ -1,50 +1,41 @@
-{% macro field(name, label, value) %}
-    <div>
-        <label class="block">{{ label }}</label>
-        <input class="text-blue-500 w-full" type="text" name="{{ name }}" x-on:change="handleChange" value="{{ value }}" placeholder="None">
-    </div>
-{% endmacro %}
+{% extends 'igloo/panel' %}
 
-<div class="fixed bottom-0 left-0 w-screen z-50 bg-white p-4 rounded-t-lg space-y-4" style="box-shadow: 0 0 20px rgba(0,0,0,0.2);" x-data="{...StylePanel(), blockId: {{ block.id }}}">
-    {% include 'igloo/components/back' %}
-    <p class="py-4 text-2xl flex justify-between">
-        <strong class="">
-            <span class="inline-block mr-1 -mb-1">{{ block.getIcon()|raw }}</span>
-            Edit {{ block.getTypeLabel() }}
-        </strong>
-        <!--
-        <a class="text-blue-500" href="#" x-on:click="back">
-            <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-x-circle-fill" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
-            </svg>
-        </a>
-        -->
-    </p>
+{% set panelDataAttr = "data-style-panel=\"#{block.id}\"" %}
+
+{% block body %}
+<div class="space-y-4 py-4" x-data="{...StylePanel(), blockId: {{ block.id }}}" x-on:change="handleChange">
+    <div class="space-y-8 px-6">
+        {% include 'igloo/components/back' %}
+        <p class="py-4 text-2xl flex justify-between">
+            <strong class="">
+                <span class="inline-block mr-1 -mb-1">{{ block.getIcon()|raw }}</span>
+                Edit {{ block.getTypeLabel() }}
+            </strong>
+        </p>
+    </div>
 
     {% for sectionName, controls in block.getControls().groupBy('section') %}
-        {% if sectionName %}
-        <p><strong>{{ sectionName }}</strong></p>
-        {% endif %}
-        {% for control in controls %}
-            {{ control.getInputHtml()|raw }}
-        {% endfor %}
+        {% set id = "style-" ~ random() %}
+        <div>
+            <input class="sr-only" type="checkbox" id="{{ id }}" data-morphdom-skip>
+
+            {% if sectionName %}
+            <label class="block border-t border-solid border-gray-200 pt-2 relative group px-6" for="{{ id }}">
+                <div class="absolute left-0 transform text-gray-400 group-sibling-checked:rotate-90">
+                    <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-caret-right-fill" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12.14 8.753l-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z"/>
+                    </svg>
+                </div>
+                <strong>{{ sectionName }}</strong>
+            </label>
+            {% endif %}
+
+            <div class="{{ sectionName ? 'hidden sibling-checked:block' : '' }} px-6 space-y-4">
+                {% for control in controls %}
+                    {{ control.getInputHtml()|raw }}
+                {% endfor %}
+            </div>
+        </div>
     {% endfor %}
-
-    <hr>
-
-    <button class="text-red-500" name="delete" value="1" x-on:click="handleDelete">Delete {{ block.getTypeLabel() }}</button>
-
-    {#
-    {{ block.getControlHtml()|raw }}
-    #}
-
-    {#
-    {{ _self.field('id', 'ID', block.attributes.id) }}
-    {{ _self.field('className', 'Class Name', block.attributes.className) }}
-    
-    <p class="text-xl"><strong>Typography</strong></p>
-    {{ _self.field('style[color]', 'Color', block.attributes.style.color) }}
-    {{ _self.field('style[weight]', 'Weight', block.attributes.style.weight) }}
-    {{ _self.field('style[fontSize]', 'Size', block.attributes.style.fontSize) }}
-    #}
 </div>
+{% endblock %}

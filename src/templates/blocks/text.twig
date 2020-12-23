@@ -1,13 +1,19 @@
-<div x-data="TextBlockController()" data-block-input data-block-id="{{ block.id }}">
+<div x-data="TextBlockController()" x-init="init" data-block-input data-block-id="{{ block.id }}">
     <input type="hidden" name="blockId" value="{{ block.id }}">
+    <div x-ref="input" name="block[content]" style="{{ block.attributes.style }}" contenteditable x-on:input="handleChange">
+        {{ block.content }}
+    </div>
+    <!--
     <input type="text"
            name="block[content]"
+           Placeholder="Type here..."
            value="{{ block.content }}" 
            style="{{ block.attributes.style }}"
            x-on:change="handleChange"
     >
+    -->
     <!--
-    <div data-ref="input" style="display: inline-block; {{ block.attributes.style }}" contenteditable>
+    <div name="block[content]" style="display: inline-block; {{ block.attributes.style }}" contenteditable x-on:change="handleChange">
         {{ block.content }}
     </div>
     -->

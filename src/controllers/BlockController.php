@@ -19,8 +19,20 @@ class BlockController extends Controller {
         
         return $this->asJson([
             'components' => [
-                "[data-block-layer][data-block-id=\"{$block->id}\"]" => $this->getView()->renderPageTemplate('igloo/components/layer', ['block' => $block]),
+                "[data-block-layer][data-block-id=\"{$block->id}\"]" => $this->getView()->namespaceInputs($this->getView()->renderPageTemplate('igloo/components/layer', ['block' => $block]), 'fields', false),
             ]
+        ]);
+    }
+
+    function actionActions($id)
+    {
+        $block = (new \markhuot\igloo\services\Blocks())->getBlock($id);
+
+        return $this->asJson([
+            'panel' => \Craft::$app->getView()->renderTemplate('igloo/block-actions', [
+                'block' => $block,
+                'path' => \Craft::$app->request->getParam('path'),
+            ])
         ]);
     }
 
@@ -36,15 +48,23 @@ class BlockController extends Controller {
         });
         (new \markhuot\igloo\services\Blocks())->saveTree($tree);
 
-        return $this->asJson([]);
+        return $this->asJson([
+            'components' => [
+                '[data-layers]' => \Craft::$app->getView()->renderTemplate('igloo/components/layers', ['tree' => $tree]),
+                '[data-tree-id="'.$tree->id.'"]' => \Craft::$app->getView()->namespaceInputs($tree->getInputHtml(), 'fields', false),
+            ],
+            'action' => 'back'
+        ]);
     }
 
     function actionStyles($id)
     {
         $block = (new \markhuot\igloo\services\Blocks())->getBlock($id);
         
-        return $this->renderTemplate('igloo/styles', [
-            'block' => $block,
+        return $this->asJson([
+            'panel' => \Craft::$app->getView()->renderTemplate('igloo/styles', [
+                'block' => $block,
+            ])
         ]);
     }
         
@@ -57,10 +77,13 @@ class BlockController extends Controller {
         $block->attributes->setAll($props);
         
         (new \markhuot\igloo\services\Blocks())->saveBlock($block);
+        //$block = (new \markhuot\igloo\services\Blocks)->getBlock($block->id);
 
         $resp = $this->asJson([
             'components' => [
-                "[data-block-input][data-block-id=\"{$block->id}\"]" => $this->getView()->renderPageTemplate('igloo/blocks/text', ['block' => $block]),
+                "[data-style-panel=\"{$block->id}\"]" => $this->getView()->renderTemplate('igloo/styles', ['block' => $block]),
+                "[data-block-input][data-block-id=\"{$block->id}\"]" => $this->getView()->namespaceInputs($block->getInputHtml(), 'fields', false),
+
             ]
         ]);
 

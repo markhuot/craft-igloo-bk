@@ -1,0 +1,9 @@
+<div>
+    <label class="block">{{ control.getLabel() }}</label>
+    <select name="{{ control.getName() }}" class="text-gray-500 valued:text-blue-500 w-full appearance-none">
+        <option value="">None</option>
+        {% for value, label in control.options %}
+            <option value="{{ value }}" {{ control.getValue() == value ? 'selected' : ''}}>{{ label }}</option>
+        {% endfor %}
+    </select>
+</div>

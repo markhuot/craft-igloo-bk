@@ -30,8 +30,8 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
      * When a parent block is not set use this to
      * track lft/rgt of the collection
      */
-    protected $lft = 0;
-    protected $rgt = 0;
+    // protected $lft = 0;
+    // protected $rgt = 0;
 
     /**
      * The tree id
@@ -133,6 +133,38 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
         return $lft;
     }
 
+    function getAtIndex($index)
+    {
+        return $this->blocks[$index];
+    }
+
+    function getAtPath($path, $slice=0)
+    {
+        $pointer = $this;
+        $path = is_array($path) ? $path : explode('.', $path);
+        $path = array_map(function ($seg) { return is_numeric($seg) ? (int)$seg : $seg; }, $path);
+
+        if ($slice < 0) {
+            $slices = array_slice($path, $slice);
+            $path = array_slice($path, 0, $slice);
+        }
+
+        foreach ($path as $index => $segment) {
+            if ($index % 2 === 1) {
+                $pointer = $pointer->getSlot($segment);
+            }
+            else {
+                $pointer = $pointer->getAtIndex($segment);
+            }
+        }
+
+        if ($slice < 0) {
+            return [$pointer, ...$slices];
+        }
+
+        return $pointer;
+    }
+
     function deleteAtIndex($index)
     {
         return $this->insertAtIndex(null, $index);
@@ -153,7 +185,7 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
 
         // Make sure we're not trying to delete a block that doesn't exist
         if ($block === null && !isset($this->blocks[$index])) {
-            throw new \Exception('You can not delete a block whose index does not exist.');
+            throw new \Exception("You can not delete block {$index}. Valid indexes: ".implode(',', array_keys($this->blocks)));
         }
 
         // Reset the lft/rgt of the block to be inserted and grab the size of the block
@@ -171,17 +203,25 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
             // Store metadata from the collection on the block
             $block->tree = $this->id;
             $block->collection = $this;
+
+            // If this block was removed and re-added clear any tombstones
+            $this->clearTombstoneFromTree($block);
         }
 
         for ($i=$index; $i<count($this->blocks); $i++) {
             $this->blocks[$i]->setLftRgt($this->blocks[$i]->lft + $size);
         }
 
-        // Now that all the lft/rgt are set we can insert the block in to the array
+        // If block is null we'll store a tombstone so it can be removed from the database
+        // and then remove the block from the collection
         if ($block === null) {
-            $this->tombstones[] = $this->blocks[$index];
+            if (!empty($this->blocks[$index]->id)) {
+                $this->tombstones[] = $this->blocks[$index];
+            }
             array_splice($this->blocks, $index, 1);
         }
+
+        // Now that all the lft/rgt are set we can insert the block in to the array
         else {
             array_splice($this->blocks, $index, 0, [$block]);
         }
@@ -192,10 +232,12 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
             $this->block->walkParents(function ($parent) use ($size) {
                 $parent->rgt += $size;
 
-                $parent->nextAll()->walkChildren(function ($sibling) use ($size) {
-                    $sibling->lft += $size;
-                    $sibling->rgt += $size;
-                });
+                if (!empty($parent->collection)) {
+                    $parent->collection->getBlocksAfter($parent)->walkChildren(function ($sibling) use ($size) {
+                        $sibling->lft += $size;
+                        $sibling->rgt += $size;
+                    });
+                }
             });
         }
 
@@ -203,15 +245,40 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
         return $this;
     }
 
+    function moveBlock($source, $destination) {
+        [$sourceTree, $sourceIndex] = $this->getAtPath($source, -1);
+        $sourceBlock = $sourceTree->getAtIndex($sourceIndex);
+        
+        [$destinationTree, $destinationIndex] = $this->getAtPath($destination, -1);
+        if ($sourceTree === $destinationTree && $sourceIndex < $destinationIndex) {
+            $destinationIndex -= 1;
+        }
+        
+        $sourceTree->deleteAtIndex($sourceIndex);
+        
+        // clear out the slot. It'll get reset, if necessary, when added back in.
+        $sourceBlock->slot = null;
+
+        $destinationTree->insertAtIndex($sourceBlock, $destinationIndex);
+
+        return $this;
+    }
+
     function getIndexOfBlock(Block $needle)
     {
-	foreach ($this->blocks as $index => $block) {
-	    if ($block === $needle) {
+	    foreach ($this->blocks as $index => $block) {
+            if ($block === $needle) {
                 return $index;
             }
         }
 
-	return false;
+	    return false;
+    }
+
+    function getBlocksAfter(Block $block)
+    {
+        $index = $this->getIndexOfBlock($block);
+        return $this->getBlocksAfterIndex($index + 1);
     }
 
     function getBlocksAfterIndex($index)
@@ -221,15 +288,54 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
 
     function getTombstones()
     {
+        return $this->tombstones;
+    }
+
+    function getTombstonesFromTree()
+    {
         $childTombstones = collect($this->blocks)
-            ->map(function (Block $block) {
-                return $block->getTombstones();
+            ->map(function ($block) {
+                return $block->children->getTombstonesFromTree();
             })
-            ->filter()
             ->flatten(1)
+            ->filter()
             ->toArray();
 
         return array_merge($this->tombstones, $childTombstones);
+    }
+
+    function clearTombstone($block)
+    {
+        $cleared = false;
+
+        foreach ($this->tombstones as $index => $tombstone) {
+            if ($tombstone->id === $block->id) {
+                $cleared = true;
+                unset($this->tombstones[$index]);
+            }
+        }
+
+        if ($cleared) {
+            $this->tombstones = array_merge($this->tombstones);
+        }
+
+        return $this;
+    }
+
+    function clearTombstoneFromTree($block)
+    {
+        $parentCollection = $this;
+        while (!empty($parentCollection->block->collection)) {
+            $parentCollection = $parentCollection->block->collection;
+        }
+
+        $parentCollection->clearTombstone($block);
+
+        $parentCollection->walkChildren(function ($child) use ($block) {
+            $child->children->clearTombstone($block);
+        });
+
+        return $this;
     }
 
     function walkChildren($callback)
@@ -239,6 +345,15 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
 	    }
 
     	return $this;
+    }
+
+    function getRoot()
+    {
+        if (empty($this->block)) {
+            return $this;
+        }
+
+        return $this->block->getRoot();
     }
 
     /**
@@ -265,15 +380,36 @@ class BlockCollection implements \Iterator, \ArrayAccess, \Countable {
         return $this->insertAtIndex($block, count($this->blocks));
     }
 
-    function push(...$blocks)
+    function appendRaw(...$blocks)
     {
         foreach ($blocks as $block) {
-            $block->collection = $this;
+            $block->tree = $this->id;
+            if ($block->slot && $parent = $this->block) {
+                $block->collection = $parent->{$block->slot};
+            }
+            else {
+                $block->collection = $this;
+            }
+            //$block->depth = isset($this->block->depth) ? $this->block->depth + 1 : 1;
         }
 
         $this->blocks = array_merge($this->blocks, $blocks);
 
         return $this;
+    }
+
+    function empty()
+    {
+        while ($this->count()) {
+            $this->deleteAtIndex(0);
+        }
+
+        return $this;
+    }
+
+    function emptyRaw()
+    {
+        $this->blocks = [];
     }
 
     /**

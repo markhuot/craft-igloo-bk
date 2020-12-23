@@ -4,6 +4,6 @@ namespace markhuot\igloo\controls;
 
 use markhuot\igloo\base\Control;
 
-class Text extends Control {
-
+class TextAlign extends Control {
+    
 }

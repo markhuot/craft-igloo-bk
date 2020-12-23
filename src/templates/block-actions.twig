@@ -1,0 +1,23 @@
+{% extends "igloo/panel" %}
+
+{% block body %}
+<div class="space-y-4 py-4" x-data="{...BlockActionController(), blockId: {{ block.id }}, treeId: '{{ block.tree }}', path: '{{ path }}'}">
+    <div class="space-y-8 px-6">
+        {% include 'igloo/components/back' %}
+        <p class="py-4 text-2xl flex justify-between">
+            <strong class="">
+                Actions
+            </strong>
+        </p>
+    </div>
+
+    <p class="mx-6 bg-gray-100 rounded-lg flex">
+        <button class="text-blue-500 p-4 flex-grow text-center border-white border-r-solid hover:underline" name="delete" value="before" x-on:click="handleInsert">Insert Above</button>
+        <button class="text-blue-500 p-4 flex-grow text-center hover:underline" name="delete" value="after" x-on:click="handleInsert">Insert Below</button>
+    </p>
+
+    <p class="px-6">
+        <button class="text-red-500 hover:underline" name="delete" value="1" x-on:click="handleDelete">Delete {{ block.getTypeLabel() }}</button>
+    </p>
+</div>
+{% endblock %}

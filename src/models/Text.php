@@ -9,6 +9,8 @@ class Text extends Block {
     /** @var string */
     public $content = '';
 
+    public $slots = [];
+
     /**
      * Text constructor.
      *
@@ -26,21 +28,20 @@ class Text extends Block {
 
     function getIcon()
     {
-        return '📝';
-        //return '<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-text-left" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        //    <path fill-rule="evenodd" d="M2 12.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
-        //</svg>';
+        // return '📝';
+        return '<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-text-left" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+           <path fill-rule="evenodd" d="M2 12.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
+        </svg>';
     }
 
     function getLabel()
     {
+        if (empty($this->content)) {
+            return 'Empty...';
+        }
+
         return substr($this->content, 0, 100);
     }
-
-    // function fields()
-    // {
-    //     return ['content'];
-    // }
 
     /**
      * Serialize the data to the persistent storage

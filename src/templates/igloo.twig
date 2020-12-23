@@ -8,7 +8,14 @@
     window.csrfTokenName = "{{ craft.app.config.general.csrfTokenName|e('js') }}"
     window.csrfTokenValue = "{{ craft.app.request.csrfToken|e('js') }}"
 </script>
-<div data-igloo-element-id="{{ element.id }}">
-    {{ blocks.getInputHtml()|raw }}
-    {% include 'igloo/components/layers' with {blocks: blocks, tree: tree} only %}
+<div class="" data-igloo-element-id="{{ element.id }}">
+    <input type="hidden" name="{{ field.handle }}" value="{{ tree.id }}">
+    {{ tree.getInputHtml()|raw }}
+    <hr style="margin-top: 100px;">
+    {{ dump(tree.flatten().serialize()) }}
+    {% embed 'igloo/panel' %}
+        {% block body %}
+            {% include 'igloo/components/layers' with {tree: tree} only %}
+        {% endblock %}
+    {% endembed %}
 </div>

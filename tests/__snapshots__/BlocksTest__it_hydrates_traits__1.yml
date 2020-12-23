@@ -1,4 +1,5 @@
 content: 'foo bar baz'
+slots: {  }
 id: null
 uid: null
 dateCreated: null
@@ -6,8 +7,6 @@ dateUpdated: null
 tree: null
 lft: null
 rgt: null
-slots:
-    - children
 slot: null
 children: {  }
 collection: null
@@ -15,4 +14,4 @@ attributes:
     id: null
     className: markhuot\igloo\valueobjects\Attributes
     classlist: ['']
-    style: { borderLeft: null, paddingLeft: null, color: red, fontSize: null, weight: null }
+    style: { backgroundAttachment: null, backgroundColor: null, backgroundImage: null, backgroundPosition: null, backgroundRepeat: null, backgroundSize: null, border: null, borderLeft: null, borderRadius: null, color: red, display: null, fontSize: null, height: null, justifyContent: null, marginBottom: null, marginLeft: null, marginRight: null, marginTop: null, paddingBottom: null, paddingLeft: null, paddingRight: null, paddingTop: null, textAlign: null, textTransform: null, weight: null, width: null }

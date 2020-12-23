@@ -1,0 +1,20 @@
+-
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Box }
+    '{{%igloo_block_structure}}': { slot: null, lft: 0, rgt: 9 }
+    '{{%igloo_block_attributes}}': {  }
+-
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Box }
+    '{{%igloo_block_structure}}': { slot: null, lft: 1, rgt: 6 }
+    '{{%igloo_block_attributes}}': {  }
+-
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
+    '{{%igloo_block_structure}}': { slot: null, lft: 2, rgt: 3 }
+    '{{%igloo_block_attributes}}': {  }
+-
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
+    '{{%igloo_block_structure}}': { slot: null, lft: 4, rgt: 5 }
+    '{{%igloo_block_attributes}}': {  }
+-
+    '{{%igloo_blocks}}': { type: markhuot\igloo\models\Box }
+    '{{%igloo_block_structure}}': { slot: null, lft: 7, rgt: 8 }
+    '{{%igloo_block_attributes}}': {  }

@@ -20,32 +20,36 @@ class IglooField extends Field {
 
         $tree = $value ?? uniqid();
 
-        $author = new Text('Shakespeare');
-        $author->attributes->style->color = 'red';
+        // $author = new Text('Shakespeare');
+        // $author->attributes->style->color = 'red';
         
-        $blockquote = new Blockquote;
-        $blockquote->content->append(new Text('To be or not to be...'));
-        $blockquote->author->append($author);
-        $blockquote->attributes->style->borderLeft = '2px solid green';
-        $blockquote->attributes->style->paddingLeft = '0.5rem';
-        $blockquote->attributes->style->color = 'green';
+        // $blockquote = new Blockquote;
+        // $blockquote->content->append(new Text('To be or not to be...'));
+        // $blockquote->author->append($author);
+        // $blockquote->attributes->style->borderLeft = '2px solid green';
+        // $blockquote->attributes->style->paddingLeft = '0.5rem';
+        // $blockquote->attributes->style->color = 'green';
         
-        $box = (new Box())
-            ->append(new Text('A preamble to the quote!'))
-            ->append($blockquote)
-            ->append(new Text('This is some postscript of our quote!'))
-        ;
+        // $box = (new Box())
+        //     ->append(new Text('A preamble to the quote!'))
+        //     ->append($blockquote)
+        //     ->append(new Text('This is some postscript of our quote!'))
+        // ;
         // $blocks = [$box];
         
-        $tree = '6tfhju69ff';
+        // $tree = '6tfhju69ff';
         //(new Blocks())->saveBlock($box, $tree);
         $blocks = (new Blocks())->getTree($tree);
-        //dd($blocks);
+        //$block = $blocks->getAtPath('0');
+        //$block->slot = null;
+        //$b = (new \markhuot\igloo\services\Blocks)->saveBlock($block);
+        //dd($block->serialize());
+        // dd($blocks->flatten()->serialize());
 
         return Craft::$app->view->renderTemplate('igloo/igloo', [
+            'field' => $this,
             'element' => $element,
-            'blocks' => $blocks,
-            'tree' => $tree,
+            'tree' => $blocks,
         ]);
     }
 

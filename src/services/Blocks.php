@@ -18,7 +18,7 @@ class Blocks {
 
         $tombstoneIds = array_filter(array_map(function (Block $block) {
             return $block->id;
-        }, $tree->getTombstones()));
+        }, $tree->getTombstonesFromTree()));
         
         \Craft::$app->db->createCommand()->delete('{{%igloo_blocks}}', ['id' => $tombstoneIds])->execute();
         \Craft::$app->db->createCommand()->delete('{{%igloo_block_structure}}', ['id' => $tombstoneIds])->execute();
@@ -304,28 +304,30 @@ class Blocks {
         return $model;
     }
 
+    /**
+     * Hydrate records
+     */
     function hydrateRecords($records)
     {
         $collection = new BlockCollection($records[0][Block::STRUCTURE_TABLE_NAME]['tree'] ?? null);
 
         $record = array_shift($records);
         $block = $this->hydrate($record);
-        $collection->push($block);
+        $collection->appendRaw($block);
 
         while (count($records)) {
             $next = array_shift($records);
             
             // next is child
             if ((int)$next[Block::STRUCTURE_TABLE_NAME]['lft'] === (int)$record[Block::STRUCTURE_TABLE_NAME]['lft'] + 1) {
-                //$block->children->concat($this->hydrateRecords(array_merge([$next], $records)));
-                $block->children->push(...$this->hydrateRecords(array_merge([$next], $records)));
+                $block->children->appendRaw(...$this->hydrateRecords(array_merge([$next], $records)));
             }
             
             // next is sibling
             if ((int)$next[Block::STRUCTURE_TABLE_NAME]['lft'] === (int)$record[Block::STRUCTURE_TABLE_NAME]['rgt'] + 1) {
                 $block = $this->hydrate($next);
                 $record = $next;
-                $collection->push($block);
+                $collection->appendRaw($block);
             }
         }
 

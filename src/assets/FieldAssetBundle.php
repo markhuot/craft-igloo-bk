@@ -18,10 +18,12 @@ class FieldAssetBundle extends AssetBundle {
         ];
 
         $this->js = [
+            'bundle.js',
             'scripts.js',
         ];
 
         $this->css = [
+            'styles.css',
         ];
 
         parent::init();

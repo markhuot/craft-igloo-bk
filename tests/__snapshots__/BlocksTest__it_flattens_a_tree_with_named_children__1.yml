@@ -1,6 +1,6 @@
 -
     '{{%igloo_blocks}}': { type: markhuot\igloo\models\Blockquote }
-    '{{%igloo_block_structure}}': { lft: 0, rgt: 5 }
+    '{{%igloo_block_structure}}': { slot: null, lft: 0, rgt: 5 }
     '{{%igloo_block_attributes}}': {  }
 -
     '{{%igloo_blocks}}': { type: markhuot\igloo\models\Text }
